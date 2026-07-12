@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex-potion-hud.local/schemas/usage-response.json",
+  "title": "Codex usage API subset",
+  "type": "object",
+  "properties": {
+    "rate_limit": {
+      "type": "object",
+      "properties": {
+        "primary": { "$ref": "#/$defs/window" },
+        "secondary": { "$ref": "#/$defs/window" },
+        "primary_window": { "$ref": "#/$defs/window" },
+        "secondary_window": { "$ref": "#/$defs/window" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "window": {
+      "type": "object",
+      "properties": {
+        "used_percent": { "type": ["number", "null"] },
+        "reset_at": { "type": ["number", "null"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

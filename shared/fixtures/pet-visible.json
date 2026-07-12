@@ -1,0 +1,8 @@
+{
+  "electron-avatar-overlay-open": true,
+  "electron-avatar-overlay-bounds": {
+    "displayId": 1,
+    "displayBounds": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+    "anchor": { "x": 1650, "y": 820, "width": 117, "height": 127 }
+  }
+}

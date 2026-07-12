@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible Codex Pet HUD problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [macOS, Windows]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: OS and Codex versions
+      placeholder: "macOS 15.5, Codex ..."
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened?
+      description: Include expected behavior and reproduction steps. Remove tokens and private data.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell

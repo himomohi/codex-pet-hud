@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex-potion-hud.local/schemas/codex-pet-state.json",
+  "title": "Codex pet overlay state subset",
+  "type": "object",
+  "required": ["electron-avatar-overlay-open", "electron-avatar-overlay-bounds"],
+  "properties": {
+    "electron-avatar-overlay-open": { "type": "boolean" },
+    "electron-avatar-overlay-bounds": {
+      "type": "object",
+      "required": ["anchor"],
+      "properties": {
+        "displayId": { "type": ["integer", "string"] },
+        "displayBounds": { "$ref": "#/$defs/rect" },
+        "anchor": { "$ref": "#/$defs/rect" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "rect": {
+      "type": "object",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    }
+  },
+  "additionalProperties": true
+}

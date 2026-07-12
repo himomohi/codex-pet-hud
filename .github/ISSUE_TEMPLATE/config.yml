@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/himomohi/codex-pet-hud/security/advisories/new
+    about: Privately report vulnerabilities or suspected token exposure.

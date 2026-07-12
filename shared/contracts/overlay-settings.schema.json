@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codex-potion-hud.local/schemas/overlay-settings.json",
+  "title": "Codex Pet HUD settings",
+  "type": "object",
+  "required": ["scale", "horizontalOffset", "verticalOffset", "potionGap", "usageAlertsEnabled", "alertThresholds", "autoCleanup"],
+  "properties": {
+    "scale": { "type": "number", "minimum": 0.5, "maximum": 1.8, "default": 1 },
+    "horizontalOffset": { "type": "number", "minimum": -400, "maximum": 400, "default": 0 },
+    "verticalOffset": { "type": "number", "minimum": -300, "maximum": 300, "default": 0 },
+    "potionGap": { "type": "number", "minimum": 0, "maximum": 160, "default": 10 },
+    "usageAlertsEnabled": { "type": "boolean", "default": true },
+    "nativeNotificationsEnabled": { "type": "boolean", "default": false },
+    "alertThresholds": {
+      "type": "array",
+      "items": { "type": "integer", "enum": [20, 10, 5] },
+      "uniqueItems": true,
+      "default": [20, 10, 5]
+    },
+    "autoCleanup": { "type": "boolean", "default": true },
+    "lastCleanupAt": { "type": ["number", "null"] },
+    "lastFreedBytes": { "type": "integer", "minimum": 0, "default": 0 }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="460" viewBox="0 0 1200 460" role="img" aria-labelledby="title desc">
+  <title id="title">Codex Pet HUD</title>
+  <desc id="desc">A cat between a red five-hour potion and a blue weekly potion.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0b0d12"/><stop offset="1" stop-color="#17111f"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ff7a59"/><stop offset="1" stop-color="#d7194b"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#55d7ff"/><stop offset="1" stop-color="#246bfe"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="460" rx="32" fill="url(#bg)"/>
+  <circle cx="160" cy="70" r="2" fill="#fff" opacity=".55"/><circle cx="1030" cy="100" r="3" fill="#fff" opacity=".5"/>
+  <circle cx="915" cy="350" r="2" fill="#fff" opacity=".4"/><circle cx="265" cy="330" r="3" fill="#fff" opacity=".35"/>
+  <g transform="translate(260 116)" filter="url(#glow)">
+    <rect x="60" width="72" height="30" rx="8" fill="#c7a879"/><rect x="72" y="26" width="48" height="27" rx="6" fill="#342d2b"/>
+    <path d="M45 49h102l32 42v94c0 38-30 68-68 68H81c-38 0-68-30-68-68V91z" fill="#21181c" stroke="#d4b483" stroke-width="8"/>
+    <path d="M25 116h142v69c0 28-23 51-51 51H76c-28 0-51-23-51-51z" fill="url(#red)"/>
+    <text x="96" y="170" fill="white" font-family="ui-sans-serif,system-ui" font-size="34" font-weight="800" text-anchor="middle">5H</text>
+  </g>
+  <g transform="translate(500 86)">
+    <path d="M55 82 82 30l36 53M245 82l-27-52-36 53" fill="#f2a76f" stroke="#f7c599" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M55 110c0-52 43-91 95-91s95 39 95 91v84c0 55-42 98-95 98S55 249 55 194z" fill="#e89b62" stroke="#f5c18f" stroke-width="8"/>
+    <path d="M91 111c17-19 37-27 59-27s42 8 59 27" fill="none" stroke="#8c4f37" stroke-width="10" stroke-linecap="round"/>
+    <ellipse cx="111" cy="145" rx="11" ry="15" fill="#17151b"/><ellipse cx="189" cy="145" rx="11" ry="15" fill="#17151b"/>
+    <path d="m150 165-10 10h20z" fill="#8c4f6c"/><path d="M126 189q24 22 48 0" fill="none" stroke="#51302f" stroke-width="7" stroke-linecap="round"/>
+    <path d="M92 173 35 160M92 190 31 194M208 173l57-13M208 190l61 4" stroke="#f8d9b8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M105 228q45 28 90 0" fill="#f3b77f"/>
+  </g>
+  <g transform="translate(775 116)" filter="url(#glow)">
+    <rect x="60" width="72" height="30" rx="8" fill="#c7a879"/><rect x="72" y="26" width="48" height="27" rx="6" fill="#342d2b"/>
+    <path d="M45 49h102l32 42v94c0 38-30 68-68 68H81c-38 0-68-30-68-68V91z" fill="#171c25" stroke="#d4b483" stroke-width="8"/>
+    <path d="M25 116h142v69c0 28-23 51-51 51H76c-28 0-51-23-51-51z" fill="url(#blue)"/>
+    <text x="96" y="170" fill="white" font-family="ui-sans-serif,system-ui" font-size="31" font-weight="800" text-anchor="middle">WK</text>
+  </g>
+  <text x="600" y="414" fill="#fff" font-family="ui-sans-serif,system-ui" font-size="24" font-weight="700" text-anchor="middle" letter-spacing="4">TWO POTIONS · ONE PET · ZERO DISTRACTIONS</text>
+</svg>

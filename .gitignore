@@ -1,0 +1,12 @@
+.DS_Store
+logs/*.log
+bin/assets/
+bin/*.app/
+platforms/macos/logs/*.log
+platforms/macos/bin/settings/
+platforms/macos/bin/*.app/
+platforms/macos/bin/CodexPetLimitRings
+platforms/windows/**/bin/
+platforms/windows/**/obj/
+platforms/windows/artifacts/
+.vs/

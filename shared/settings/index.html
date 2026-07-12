@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>포션 펫 설정</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="brand">
+      <div class="brand-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5.2 8.7A2.8 2.8 0 0 0 7.2 21h9.6a2.8 2.8 0 0 0 2.4-4.3L14 8V3"/><path d="M7.5 15h9"/></svg>
+      </div>
+      <div>
+        <h1>포션 펫 설정</h1>
+        <p>변경 사항은 바로 적용돼요</p>
+      </div>
+    </div>
+    <div class="toolbar-actions">
+      <span class="status-badge"><i></i> 오버레이 실행 중</span>
+      <button class="button ghost" id="resetButton">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        기본값 복원
+      </button>
+      <button class="button primary" id="doneButton">완료</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="preview-column" aria-labelledby="previewTitle">
+      <div class="section-heading">
+        <div>
+          <h2 id="previewTitle">실시간 미리보기</h2>
+          <p>펫을 중심으로 포션 HUD의 균형을 확인하세요.</p>
+        </div>
+        <span class="live-badge"><span></span> 실시간</span>
+      </div>
+
+      <div class="preview-stage" id="previewStage">
+        <div class="ambient ambient-one"></div>
+        <div class="ambient ambient-two"></div>
+        <div class="axis horizontal"></div>
+        <div class="axis vertical"></div>
+        <div class="hud-preview" id="hudPreview">
+          <div class="potion potion-red">
+            <div class="potion-cap"></div>
+            <div class="potion-brace left"></div><div class="potion-brace right"></div>
+            <div class="potion-glass"><div class="liquid"></div><span>93%</span></div>
+            <b>5H</b>
+          </div>
+          <div class="pet-sprite" aria-label="포션 펫"></div>
+          <div class="potion potion-blue">
+            <div class="potion-cap"></div>
+            <div class="potion-brace left"></div><div class="potion-brace right"></div>
+            <div class="potion-glass"><div class="liquid"></div><span>99%</span></div>
+            <b>WK</b>
+          </div>
+        </div>
+        <p class="preview-hint">슬라이더를 움직이면 실제 오버레이도 함께 바뀝니다.</p>
+      </div>
+    </section>
+
+    <aside class="settings-panel" aria-label="오버레이 설정">
+      <section class="settings-section">
+        <div class="section-title">
+          <span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span>
+          <div><h3>배치</h3><p>펫을 기준으로 위치를 맞춰요.</p></div>
+        </div>
+
+        <div class="field-grid">
+          <div class="control-group">
+            <label for="horizontalOffset"><svg viewBox="0 0 24 24"><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>가로 위치</label>
+            <div class="slider-row"><input type="range" id="horizontalOffset" min="-400" max="400" step="1"><output id="horizontalOffsetValue">0px</output></div>
+          </div>
+          <div class="control-group">
+            <label for="verticalOffset"><svg viewBox="0 0 24 24"><path d="M12 4v16M9 7l3-3 3 3M9 17l3 3 3-3"/></svg>세로 위치</label>
+            <div class="slider-row"><input type="range" id="verticalOffset" min="-300" max="300" step="1"><output id="verticalOffsetValue">0px</output></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <div class="section-title">
+          <span class="icon"><svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></span>
+          <div><h3>크기와 간격</h3><p>화면과 펫 크기에 맞게 조절해요.</p></div>
+        </div>
+
+        <div class="control-group wide">
+          <label for="scale">전체 크기 <small>포션 HUD의 비율</small></label>
+          <div class="slider-row"><input type="range" id="scale" min="50" max="180" step="5"><output id="scaleValue">100%</output></div>
+        </div>
+        <div class="control-group wide">
+          <label for="potionGap">포션 간격 <small>펫과 포션 사이 거리</small></label>
+          <div class="slider-row"><input type="range" id="potionGap" min="0" max="160" step="1"><output id="potionGapValue">10px</output></div>
+        </div>
+      </section>
+
+      <section class="settings-section alerts">
+        <div class="section-title">
+          <span class="icon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg></span>
+          <div><h3>잔여량 알림</h3><p>포션이 부족해질 때 한 번만 알려드려요.</p></div>
+        </div>
+
+        <label class="switch-row compact">
+          <span><strong>포션 알림 사용</strong><small>5시간과 주간 한도를 각각 추적해요.</small></span>
+          <input type="checkbox" id="usageAlertsEnabled"><i class="switch"></i>
+        </label>
+
+        <div class="threshold-options" id="thresholdOptions" aria-label="알림 기준">
+          <label class="threshold-chip"><input type="checkbox" id="alert20"><span>20%</span></label>
+          <label class="threshold-chip"><input type="checkbox" id="alert10"><span>10%</span></label>
+          <label class="threshold-chip"><input type="checkbox" id="alert5"><span>5%</span></label>
+        </div>
+
+        <label class="switch-row native-alert-row">
+          <span><strong>macOS 배너도 표시</strong><small>처음 켤 때 macOS가 권한을 물어요.</small></span>
+          <input type="checkbox" id="nativeNotificationsEnabled"><i class="switch"></i>
+        </label>
+      </section>
+
+      <section class="settings-section maintenance">
+        <div class="section-title">
+          <span class="icon"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg></span>
+          <div><h3>저장 공간</h3><p>앱 로그와 재생 가능한 캐시만 정리해요.</p></div>
+        </div>
+
+        <label class="switch-row compact">
+          <span><strong>매일 자동 정리</strong><small>하루에 한 번 조용히 실행해요.</small></span>
+          <input type="checkbox" id="autoCleanup"><i class="switch"></i>
+        </label>
+        <dl class="maintenance-stats">
+          <div><dt>마지막 정리</dt><dd id="lastCleanup">아직 없음</dd></div>
+          <div><dt>확보한 공간</dt><dd id="freedSpace">0 B</dd></div>
+          <div><dt>다음 정리</dt><dd id="nextCleanup">자동 정리 후 표시</dd></div>
+        </dl>
+        <button class="button outline cleanup-button" id="cleanupButton">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/></svg>
+          <span>지금 정리</span>
+        </button>
+      </section>
+    </aside>
+  </main>
+
+  <div class="toast" id="toast" role="status"><span>✓</span><p>설정이 저장됐어요.</p></div>
+  <script src="app.js"></script>
+</body>
+</html>
