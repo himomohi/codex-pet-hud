@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/images/hero.svg" alt="Codex Pet HUD — cat with two usage potions" width="920">
+  <img src="site/assets/images/codex-pet-hud-hero.png" alt="Pixel-art Codex Pet HUD cat with two usage potions" width="920">
   <h1>Codex Pet HUD</h1>
   <p><strong>Two potions. One pet. Zero distractions.</strong></p>
   <p>A native macOS and Windows HUD that turns five-hour and weekly Codex usage into potions beside your pet.</p>
@@ -15,6 +15,7 @@
     <img alt="Windows 10/11 preview" src="https://img.shields.io/badge/Windows-10%2F11_preview-7dc4e4?style=flat-square&logo=windows11&logoColor=white">
     <img alt="No keyboard capture" src="https://img.shields.io/badge/keyboard_capture-none-a6da95?style=flat-square">
   </p>
+  <p><a href="https://himomohi.github.io/codex-pet-hud/"><strong>Website</strong></a> · <a href="https://github.com/himomohi/codex-pet-hud/releases"><strong>Download</strong></a> · <a href="CHANGELOG.md"><strong>Changelog</strong></a></p>
 </div>
 
 ## Why it feels native
@@ -24,6 +25,8 @@
 | Appears and disappears with the real Codex pet. | Swift/AppKit on macOS and .NET 8/WPF on Windows. | No keyboard hooks, no token logging, no duplicate pet. |
 
 The pet stays centered and clickable. The red potion shows the five-hour window; the blue potion shows the weekly window. Hover to see the reset countdown, or click for details and a manual refresh.
+
+<p align="center"><img src="site/assets/images/pet-aware-magic.png" alt="Pixel-art cat hiding while both potion HUDs fade away" width="520"></p>
 
 ## Highlights
 
@@ -49,6 +52,8 @@ The pet stays centered and clickable. The red potion shows the five-hour window;
 > Windows source and x64/ARM64 publishing are verified, but a real Windows 10/11 UI, DPI, tray, and SmartScreen pass is still required before the first signed release.
 
 ## Quick start
+
+Prefer a packaged build? Visit the **[download page](https://himomohi.github.io/codex-pet-hud/#download)** or **[GitHub Releases](https://github.com/himomohi/codex-pet-hud/releases)**. Preview archives include `SHA256SUMS.txt` and may trigger Gatekeeper or SmartScreen because they are not yet notarized or code-signed.
 
 ### macOS
 
@@ -112,6 +117,8 @@ Read [the architecture notes](docs/architecture.md) for platform boundaries, sec
 ## Contributing
 
 Ideas and focused pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and use the issue templates. Security reports should follow [SECURITY.md](SECURITY.md).
+
+Release maintainers should follow the [release handbook](docs/releasing.md). Version tags produce three preview archives plus a verified SHA-256 manifest.
 
 ## License
 

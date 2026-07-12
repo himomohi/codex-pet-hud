@@ -1,14 +1,17 @@
 <div align="center">
-  <img src="../images/hero.svg" alt="고양이와 두 개의 사용량 포션이 있는 Codex Pet HUD" width="920">
+  <img src="../../site/assets/images/codex-pet-hud-hero.png" alt="고양이와 두 개의 사용량 포션이 있는 픽셀아트 Codex Pet HUD" width="920">
   <h1>Codex Pet HUD</h1>
   <p><strong>두 개의 포션, 하나의 펫, 방해는 제로.</strong></p>
   <p>Codex 펫 곁에 5시간·주간 사용량을 포션으로 보여주는 macOS·Windows 네이티브 HUD.</p>
   <p><strong>한국어</strong> · <a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a></p>
+  <p><a href="https://himomohi.github.io/codex-pet-hud/"><strong>소개 페이지</strong></a> · <a href="https://github.com/himomohi/codex-pet-hud/releases"><strong>다운로드</strong></a> · <a href="../../CHANGELOG.md"><strong>변경 내역</strong></a></p>
 </div>
 
 ## 소개
 
 펫은 중앙에 그대로 남아 클릭할 수 있습니다. 왼쪽 빨간 포션은 5시간 사용량, 오른쪽 파란 포션은 주간 사용량을 보여줍니다. 마우스를 올리면 초기화까지 남은 시간이 표시되고, 클릭하면 상세 사용량과 수동 새로고침을 확인할 수 있습니다.
+
+<p align="center"><img src="../../site/assets/images/pet-aware-magic.png" alt="펫이 숨을 때 양쪽 포션도 사라지는 픽셀아트" width="520"></p>
 
 | 🐾 펫과 연동 | ⚡ 플랫폼 네이티브 | 🔒 조용하고 안전하게 |
 |---|---|---|
@@ -35,6 +38,8 @@
 > Windows는 x64/ARM64 빌드가 검증됐지만 첫 서명 릴리스 전에 실제 Windows 10/11에서 UI·DPI·트레이·SmartScreen 검증이 필요합니다.
 
 ## 설치
+
+패키지 빌드는 **[다운로드 페이지](https://himomohi.github.io/codex-pet-hud/#download)** 또는 **[GitHub Releases](https://github.com/himomohi/codex-pet-hud/releases)**에서 받을 수 있습니다. SHA-256 체크섬이 함께 제공되며, 아직 공증·코드 서명이 완료되지 않아 Gatekeeper 또는 SmartScreen 경고가 표시될 수 있습니다.
 
 ### macOS
 

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090b12">
+  <meta name="description" content="Codex Pet HUD turns five-hour and weekly Codex usage into two tiny potions beside your pet.">
+  <meta property="og:title" content="Codex Pet HUD">
+  <meta property="og:description" content="Two potions. One pet. Zero distractions.">
+  <meta property="og:image" content="https://himomohi.github.io/codex-pet-hud/assets/images/codex-pet-hud-hero.png">
+  <meta property="og:type" content="website">
+  <title>Codex Pet HUD</title>
+  <link rel="icon" type="image/png" href="assets/images/pet-aware-magic.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;800&amp;family=Noto+Sans+KR:wght@400;600;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Codex Pet HUD home"><span class="brand-pixel" aria-hidden="true"></span>Codex Pet HUD</a>
+    <nav aria-label="Primary navigation">
+      <a href="#story" data-i18n="navStory">Story</a>
+      <a href="#download" data-i18n="navDownload">Download</a>
+      <a href="#changelog" data-i18n="navChangelog">Changelog</a>
+      <a href="https://github.com/himomohi/codex-pet-hud">GitHub</a>
+    </nav>
+    <div class="languages" aria-label="Language">
+      <button type="button" data-lang="ko">KO</button><button type="button" data-lang="en">EN</button><button type="button" data-lang="zh">中文</button><button type="button" data-lang="ja">日本語</button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <img class="hero-art" src="assets/images/codex-pet-hud-hero.png" alt="A pixel-art orange cat sitting between a red potion and a blue potion">
+      <div class="hero-shade"></div>
+      <div class="hero-copy reveal">
+        <p class="eyebrow">CODEX PET HUD · OPEN SOURCE</p>
+        <h1 data-i18n="heroTitle">Two potions.<br>One pet.<br><em>Zero distractions.</em></h1>
+        <p data-i18n="heroBody">See five-hour and weekly Codex usage as tiny potions beside your pet.</p>
+        <div class="actions">
+          <a class="button primary" id="heroDownload" href="https://github.com/himomohi/codex-pet-hud/releases" data-i18n="downloadLatest">Download preview</a>
+          <a class="button quiet" href="#story" data-i18n="meetHud">Meet the HUD ↓</a>
+        </div>
+        <p class="release-status"><span class="status-dot"></span><span id="heroVersion" data-i18n="checkingRelease">Checking latest release…</span></p>
+      </div>
+    </section>
+
+    <section class="manifesto" id="story">
+      <p class="section-index">01 / PET-AWARE</p>
+      <h2 data-i18n="storyTitle">It follows your pet,<br>not your keyboard.</h2>
+      <div class="story-grid">
+        <div class="story-copy reveal">
+          <p data-i18n="storyBody">When the Codex pet disappears, the potions and network refresh disappear with it. Bring the pet back and the HUD returns automatically.</p>
+          <ul>
+            <li data-i18n="featureNative">Native Swift/AppKit and .NET 8/WPF</li>
+            <li data-i18n="featurePrivacy">No keyboard capture. No token logging.</li>
+            <li data-i18n="featureCenter">The original pet stays centered and clickable.</li>
+          </ul>
+        </div>
+        <figure class="pixel-frame reveal">
+          <img src="assets/images/pet-aware-magic.png" alt="Pixel-art cat hiding while red and blue potion bottles fade into sparkles" loading="lazy">
+        </figure>
+      </div>
+    </section>
+
+    <section class="download" id="download">
+      <p class="section-index">02 / GET THE HUD</p>
+      <div class="download-heading">
+        <h2 data-i18n="downloadTitle">Pick your potion pack.</h2>
+        <p data-i18n="downloadBody">Every preview includes source-linked builds and a SHA-256 checksum. No administrator access is required.</p>
+      </div>
+      <div class="release-meta"><span id="releaseVersion">Preview</span><span id="releaseDate">—</span><span class="preview-tag">UNSIGNED PREVIEW</span></div>
+      <div class="download-list">
+        <a class="download-row recommended" id="macDownload" href="https://github.com/himomohi/codex-pet-hud/releases">
+          <span class="platform-mark">⌘</span><span><strong>macOS Universal</strong><small data-i18n="macRequirement">macOS 13+ · Apple Silicon + Intel</small></span><span class="arrow">↓</span>
+        </a>
+        <a class="download-row" id="winX64Download" href="https://github.com/himomohi/codex-pet-hud/releases">
+          <span class="platform-mark">⊞</span><span><strong>Windows x64</strong><small data-i18n="windowsRequirement">Windows 10/11 · x64</small></span><span class="arrow">↓</span>
+        </a>
+        <a class="download-row" id="winArmDownload" href="https://github.com/himomohi/codex-pet-hud/releases">
+          <span class="platform-mark">⊞</span><span><strong>Windows ARM64</strong><small data-i18n="windowsArmRequirement">Windows 11 · ARM64</small></span><span class="arrow">↓</span>
+        </a>
+        <a class="download-row checksum" id="checksumDownload" href="https://github.com/himomohi/codex-pet-hud/releases">
+          <span class="platform-mark">#</span><span><strong>SHA256SUMS.txt</strong><small data-i18n="verifyDownload">Verify your download</small></span><span class="arrow">↓</span>
+        </a>
+      </div>
+      <aside class="warning"><strong data-i18n="previewWarningTitle">Preview warning</strong><span data-i18n="previewWarning">These builds are not yet notarized or code-signed. Gatekeeper or SmartScreen may show an unknown-developer warning. Download only from the official GitHub Releases page.</span></aside>
+    </section>
+
+    <section class="changelog" id="changelog">
+      <p class="section-index">03 / CHANGELOG</p>
+      <div class="changelog-layout">
+        <h2 data-i18n="whatsNew">What’s new in 0.1.0</h2>
+        <div class="release-notes reveal">
+          <p class="date">2026 · 07 · 12</p>
+          <h3 data-i18n="firstDrop">The first potion drop.</h3>
+          <p data-i18n="firstDropBody">Pet-aware visibility, two live usage windows, reset countdowns, threshold alerts, native settings, and cross-platform preview builds.</p>
+          <a href="https://github.com/himomohi/codex-pet-hud/blob/main/CHANGELOG.md" data-i18n="fullChangelog">Read the full changelog →</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <p data-i18n="finalEyebrow">A tiny companion for long coding sessions.</p>
+      <h2 data-i18n="finalTitle">Give your pet<br>a pair of potions.</h2>
+      <div class="actions">
+        <a class="button primary" href="#download" data-i18n="chooseDownload">Choose a download</a>
+        <a class="button quiet" href="https://github.com/himomohi/codex-pet-hud" data-i18n="viewSource">View source</a>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>Codex Pet HUD · MIT</span><span data-i18n="communityNotice">Independent community project · Not an official OpenAI product</span></footer>
+</body>
+</html>

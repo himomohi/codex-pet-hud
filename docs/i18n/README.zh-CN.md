@@ -1,14 +1,17 @@
 <div align="center">
-  <img src="../images/hero.svg" alt="Codex Pet HUD：猫咪与两瓶用量药水" width="920">
+  <img src="../../site/assets/images/codex-pet-hud-hero.png" alt="Codex Pet HUD：猫咪与两瓶像素风用量药水" width="920">
   <h1>Codex Pet HUD</h1>
   <p><strong>两瓶药水，一只宠物，零干扰。</strong></p>
   <p>原生支持 macOS 与 Windows，在 Codex 宠物两侧以药水显示五小时和每周用量。</p>
   <p><a href="README.ko.md">한국어</a> · <a href="../../README.md">English</a> · <strong>简体中文</strong> · <a href="README.ja.md">日本語</a></p>
+  <p><a href="https://himomohi.github.io/codex-pet-hud/"><strong>介绍页面</strong></a> · <a href="https://github.com/himomohi/codex-pet-hud/releases"><strong>下载</strong></a> · <a href="../../CHANGELOG.md"><strong>更新日志</strong></a></p>
 </div>
 
 ## 项目简介
 
 宠物始终居中且可点击。左侧红色药水显示五小时用量，右侧蓝色药水显示每周用量。悬停可查看距离重置的剩余时间，点击可打开详情并手动刷新。
+
+<p align="center"><img src="../../site/assets/images/pet-aware-magic.png" alt="宠物隐藏时两瓶药水也消失的像素画" width="520"></p>
 
 | 🐾 宠物联动 | ⚡ 双平台原生 | 🔒 安静且注重隐私 |
 |---|---|---|
@@ -35,6 +38,8 @@
 > Windows x64/ARM64 构建已通过验证，但首次签名发布前仍需在真实 Windows 10/11 设备上验证 UI、DPI、托盘与 SmartScreen。
 
 ## 安装
+
+可从**[下载页面](https://himomohi.github.io/codex-pet-hud/#download)**或 **[GitHub Releases](https://github.com/himomohi/codex-pet-hud/releases)** 获取打包版本，并使用随附的 SHA-256 校验值验证。由于尚未完成公证和代码签名，系统可能显示 Gatekeeper 或 SmartScreen 警告。
 
 ### macOS
 

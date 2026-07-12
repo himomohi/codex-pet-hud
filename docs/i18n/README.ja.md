@@ -1,14 +1,17 @@
 <div align="center">
-  <img src="../images/hero.svg" alt="猫と2本の使用量ポーションを描いた Codex Pet HUD" width="920">
+  <img src="../../site/assets/images/codex-pet-hud-hero.png" alt="猫と2本の使用量ポーションを描いたピクセルアート Codex Pet HUD" width="920">
   <h1>Codex Pet HUD</h1>
   <p><strong>2つのポーション、1匹のペット、邪魔はゼロ。</strong></p>
   <p>Codex ペットの両側に、5時間枠と週間枠の使用量をポーションで表示する macOS・Windows ネイティブ HUD。</p>
   <p><a href="README.ko.md">한국어</a> · <a href="../../README.md">English</a> · <a href="README.zh-CN.md">简体中文</a> · <strong>日本語</strong></p>
+  <p><a href="https://himomohi.github.io/codex-pet-hud/"><strong>紹介ページ</strong></a> · <a href="https://github.com/himomohi/codex-pet-hud/releases"><strong>ダウンロード</strong></a> · <a href="../../CHANGELOG.md"><strong>変更履歴</strong></a></p>
 </div>
 
 ## 概要
 
 ペットは中央に残り、そのままクリックできます。左の赤いポーションは5時間枠、右の青いポーションは週間枠の使用量を表示します。ホバーするとリセットまでの残り時間を確認でき、クリックすると詳細表示と手動更新ができます。
+
+<p align="center"><img src="../../site/assets/images/pet-aware-magic.png" alt="ペットが隠れると2つのポーションも消えるピクセルアート" width="520"></p>
 
 | 🐾 ペット連動 | ⚡ 両OSでネイティブ | 🔒 静かでプライバシー重視 |
 |---|---|---|
@@ -35,6 +38,8 @@
 > Windows の x64/ARM64 ビルドは検証済みですが、初回署名リリース前に実機の Windows 10/11 で UI・DPI・トレイ・SmartScreen の確認が必要です。
 
 ## インストール
+
+パッケージ版は**[ダウンロードページ](https://himomohi.github.io/codex-pet-hud/#download)**または **[GitHub Releases](https://github.com/himomohi/codex-pet-hud/releases)**から取得でき、付属の SHA-256 チェックサムで検証できます。公証・コード署名が未完了のため、Gatekeeper または SmartScreen の警告が表示される場合があります。
 
 ### macOS
 

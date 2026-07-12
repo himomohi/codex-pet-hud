@@ -10,3 +10,5 @@ platforms/windows/**/bin/
 platforms/windows/**/obj/
 platforms/windows/artifacts/
 .vs/
+/artifacts/
+/dist/
