@@ -9,6 +9,16 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
 
+## [0.1.1] - 2026-07-13
+
+### Changed
+
+- Refresh pinned GitHub Actions revisions used by the release and Pages workflows
+
+### Fixed
+
+- Show a weekly usage potion correctly when an event removes the five-hour limit and the API returns only a seven-day primary window
+
 ## [0.1.0] - 2026-07-12
 
 ### Added
@@ -28,5 +38,6 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/himomohi/codex-pet-hud/releases/tag/v0.1.0

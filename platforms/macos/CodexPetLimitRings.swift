@@ -2376,8 +2376,7 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         source: String
     ) -> LimitUsage? {
         let selectedPayload = selectedRatePayload(from: payload, additional: additional)
-        let primary = selectedPayload?.primary ?? selectedPayload?.primary_window
-        let secondary = selectedPayload?.secondary ?? selectedPayload?.secondary_window
+        let (primary, secondary) = classifiedBuckets(in: selectedPayload)
         guard primary?.used_percent != nil || secondary?.used_percent != nil else {
             return nil
         }
@@ -2389,6 +2388,26 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
             secondaryReset: secondary?.reset_at,
             source: source
         )
+    }
+
+    private func classifiedBuckets(in payload: RatePayload?) -> (BucketPayload?, BucketPayload?) {
+        let primary = payload?.primary ?? payload?.primary_window
+        let secondary = payload?.secondary ?? payload?.secondary_window
+        guard secondary == nil, let primary, isWeeklyWindow(primary) else {
+            return (primary, secondary)
+        }
+        return (nil, primary)
+    }
+
+    private func isWeeklyWindow(_ bucket: BucketPayload) -> Bool {
+        let weeklySeconds = 7.0 * 24 * 60 * 60
+        if let seconds = bucket.limit_window_seconds {
+            return seconds >= weeklySeconds
+        }
+        if let minutes = bucket.window_minutes {
+            return minutes * 60 >= weeklySeconds
+        }
+        return false
     }
 
     private func selectedRatePayload(
@@ -2432,8 +2451,7 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
     }
 
     private func hasUsageData(_ payload: RatePayload?) -> Bool {
-        let primary = payload?.primary ?? payload?.primary_window
-        let secondary = payload?.secondary ?? payload?.secondary_window
+        let (primary, secondary) = classifiedBuckets(in: payload)
         return primary?.used_percent != nil || secondary?.used_percent != nil
     }
 

@@ -44,6 +44,11 @@ public sealed class UsageService : IDisposable
         var container = root.TryGetProperty("rate_limit", out var rateLimit) ? rateLimit : root;
         var primary = FindWindow(container, "primary_window", "primary");
         var secondary = FindWindow(container, "secondary_window", "secondary");
+        if (secondary is null && primary?.WindowSeconds >= TimeSpan.FromDays(7).TotalSeconds)
+        {
+            secondary = primary;
+            primary = null;
+        }
         if (primary is null && secondary is null) return null;
         return new UsageSnapshot(
             primary?.Used,
@@ -60,9 +65,14 @@ public sealed class UsageService : IDisposable
         if (!container.TryGetProperty(preferred, out value) && !container.TryGetProperty(fallback, out value)) return null;
         double? used = value.TryGetProperty("used_percent", out var usedElement) && usedElement.TryGetDouble(out var number) ? number : null;
         long? reset = value.TryGetProperty("reset_at", out var resetElement) && resetElement.TryGetInt64(out var timestamp) ? timestamp : null;
-        return new WindowValue(used, reset);
+        double? windowSeconds = value.TryGetProperty("limit_window_seconds", out var secondsElement) && secondsElement.TryGetDouble(out var seconds)
+            ? seconds
+            : value.TryGetProperty("window_minutes", out var minutesElement) && minutesElement.TryGetDouble(out var minutes)
+                ? minutes * 60
+                : null;
+        return new WindowValue(used, reset, windowSeconds);
     }
 
     public void Dispose() => _client.Dispose();
-    private sealed record WindowValue(double? Used, long? Reset);
+    private sealed record WindowValue(double? Used, long? Reset, double? WindowSeconds);
 }
