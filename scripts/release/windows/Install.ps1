@@ -9,5 +9,9 @@ Remove-Item $InstallRoot -Recurse -Force -ErrorAction SilentlyContinue
 New-Item $InstallRoot -ItemType Directory -Force | Out-Null
 Copy-Item (Join-Path $Source "*") $InstallRoot -Recurse -Force
 New-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "CodexPetLimitRings" -Value ('"' + $Executable + '"') -PropertyType String -Force | Out-Null
-Start-Process $Executable
+$Process = Start-Process $Executable -PassThru
+Start-Sleep -Seconds 1
+if ($Process.HasExited) {
+    throw "Codex Pet HUD exited during startup. Check $env:LOCALAPPDATA\CodexPetLimitRings\Logs\runtime.log."
+}
 Write-Host "Installed Codex Pet HUD to $InstallRoot"

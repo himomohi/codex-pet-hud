@@ -10,7 +10,9 @@
       <Ellipse.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="5" Opacity="0.45" /></Ellipse.Effect>
     </Ellipse>
     <Ellipse x:Name="Liquid" Width="65" Height="65" VerticalAlignment="Top" Margin="0,21,0,0"
-             Stroke="#161616" StrokeThickness="2" />
+             Stroke="#161616" StrokeThickness="2">
+      <Ellipse.Clip><RectangleGeometry x:Name="LiquidClip" Rect="0,65,65,0" /></Ellipse.Clip>
+    </Ellipse>
     <Border Width="34" Height="10" VerticalAlignment="Top" Margin="0,5,0,0"
             Background="#201D19" BorderBrush="#AA8F69" BorderThickness="2" CornerRadius="3" />
     <TextBlock x:Name="PercentText" Text="—" Foreground="White" FontSize="14" FontWeight="Bold"

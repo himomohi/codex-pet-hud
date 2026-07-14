@@ -9,6 +9,15 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
 
+## [0.1.2] - 2026-07-15
+
+### Fixed
+
+- Keep the Windows HUD tied to the real visible Codex pet window instead of stale saved bounds
+- Accept null usage buckets and preserve weekly-only events without terminating the Windows app
+- Cancel in-flight usage refreshes when the pet is hidden and report startup or refresh failures in the runtime log
+- Fail Windows packaging when publish output or required release payloads are missing
+
 ## [0.1.1] - 2026-07-13
 
 ### Changed
@@ -38,6 +47,7 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/himomohi/codex-pet-hud/releases/tag/v0.1.0

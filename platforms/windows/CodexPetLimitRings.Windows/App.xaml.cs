@@ -18,8 +18,17 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        _controller = new MainController();
-        _controller.Start();
+        try
+        {
+            _controller = new MainController();
+            _controller.Start();
+            Services.AppLog.Write("Codex Pet HUD started.");
+        }
+        catch (Exception error)
+        {
+            Services.AppLog.Write($"Startup failed: {error.GetType().Name}: {error.Message}");
+            Shutdown();
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

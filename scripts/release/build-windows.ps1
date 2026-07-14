@@ -25,6 +25,8 @@ dotnet publish $Project `
   -p:ContinuousIntegrationBuild=true `
   -p:Version=$Version `
   -o $App
+if ($LASTEXITCODE -ne 0) { throw "Windows publish failed for $Runtime." }
+if (-not (Test-Path (Join-Path $App "CodexPetLimitRings.exe"))) { throw "Windows executable is missing for $Runtime." }
 
 Copy-Item (Join-Path $Root "LICENSE") (Join-Path $Work "LICENSE.txt")
 Copy-Item (Join-Path $Root "scripts\release\windows\Install.ps1") (Join-Path $Work "Install.ps1")

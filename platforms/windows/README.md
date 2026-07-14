@@ -6,7 +6,9 @@ The Windows implementation is a native .NET 8 WPF tray application. It creates t
 
 - Windows 10 1703 or newer, or Windows 11
 - .NET 8 SDK for source installation
-- Codex must expose `%USERPROFILE%\.codex\.codex-global-state.json` with the same `electron-avatar-overlay-open` and anchor contract documented under `shared/contracts/`
+- Codex must expose `%USERPROFILE%\.codex\.codex-global-state.json` with the state contract documented under `shared/contracts/`
+
+Set `CODEX_HOME` when the Codex data directory is not `%USERPROFILE%\.codex`.
 
 ## Install
 
@@ -15,6 +17,8 @@ The Windows implementation is a native .NET 8 WPF tray application. It creates t
 ```
 
 The installer publishes a self-contained executable, copies it to `%LOCALAPPDATA%\Programs\CodexPetLimitRings`, registers the current-user Run key, and starts it. It does not require administrator privileges.
+
+Runtime diagnostics are written to `%LOCALAPPDATA%\CodexPetLimitRings\Logs\runtime.log` without tokens or response bodies.
 
 Uninstall while preserving settings:
 

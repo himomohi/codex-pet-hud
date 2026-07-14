@@ -8,12 +8,18 @@
     "electron-avatar-overlay-open": { "type": "boolean" },
     "electron-avatar-overlay-bounds": {
       "type": "object",
-      "required": ["anchor"],
+      "required": ["x", "y", "width", "height"],
       "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 },
         "displayId": { "type": ["integer", "string"] },
         "displayBounds": { "$ref": "#/$defs/rect" },
-        "anchor": { "$ref": "#/$defs/rect" }
+        "anchor": { "$ref": "#/$defs/rect" },
+        "mascot": { "$ref": "#/$defs/offsetRect" }
       },
+      "anyOf": [{ "required": ["anchor"] }, { "required": ["mascot"] }],
       "additionalProperties": true
     }
   },
@@ -24,6 +30,16 @@
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" },
+        "width": { "type": "number", "exclusiveMinimum": 0 },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "offsetRect": {
+      "type": "object",
+      "required": ["left", "top", "width", "height"],
+      "properties": {
+        "left": { "type": "number" },
+        "top": { "type": "number" },
         "width": { "type": "number", "exclusiveMinimum": 0 },
         "height": { "type": "number", "exclusiveMinimum": 0 }
       }

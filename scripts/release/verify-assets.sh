@@ -8,10 +8,19 @@ archives=(Codex-Pet-HUD-v*.zip)
 [[ ${#archives[@]} -eq 3 ]] || { echo "Expected exactly 3 release archives, found ${#archives[@]}" >&2; exit 1; }
 
 for archive in "${archives[@]}"; do
+  unzip -tqq "$archive"
   listing="$(unzip -Z1 "$archive")"
   if grep -Eiq '(^|/)(\.git|\.codex|auth\.json|\.env|logs?|bin|obj)(/|$)|\.(p12|cer|mobileprovision)$|/Users/' <<<"$listing"; then
     echo "Forbidden release content in $archive" >&2
     exit 1
+  fi
+  if [[ "$archive" == *-Windows-*.zip ]]; then
+    for required in app/CodexPetLimitRings.exe Install.ps1 Uninstall.ps1 LICENSE.txt README.txt; do
+      grep -Fxq "$required" <<<"$listing" || {
+        echo "Missing $required in $archive" >&2
+        exit 1
+      }
+    done
   fi
 done
 

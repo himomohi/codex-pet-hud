@@ -1,5 +1,7 @@
 using System.Drawing;
+using System.Text.Json;
 using System.Windows.Threading;
+using CodexPetLimitRings.Windows.Interop;
 using CodexPetLimitRings.Windows.Services;
 using CodexPetLimitRings.Windows.Views;
 using Forms = System.Windows.Forms;
@@ -23,8 +25,11 @@ public sealed class MainController : IDisposable
     private UsageSnapshot _usage = UsageSnapshot.Empty;
     private PetAnchor? _anchor;
     private DateTimeOffset _lastUsageAttempt = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastUsageSuccess = DateTimeOffset.MinValue;
+    private CancellationTokenSource? _usageCancellation;
     private bool _refreshing;
     private bool _petVisible;
+    private long _visibilityGeneration;
 
     public MainController()
     {
@@ -42,35 +47,49 @@ public sealed class MainController : IDisposable
         _settingsWindow.SettingsChanged += ApplySettings;
         _settingsWindow.CleanupRequested += RunCleanup;
         _settingsWindow.Apply(_settings);
-        _timer.Tick += async (_, _) => await TickAsync();
+        _timer.Tick += (_, _) => Tick();
         _timer.Start();
-        _ = TickAsync();
+        Tick();
     }
 
-    private async Task TickAsync()
+    private void Tick()
     {
-        var anchor = _stateReader.ReadVisibleAnchor();
-        if (anchor is null)
+        try
         {
-            HideHud();
-            return;
-        }
+            RunScheduledCleanupIfNeeded();
+            var candidate = _stateReader.ReadVisibleCandidate();
+            var anchor = candidate is null ? null : NativeMethods.FindVisiblePetAnchor(candidate);
+            if (anchor is null)
+            {
+                HideHud();
+                return;
+            }
 
-        var justShown = !_petVisible;
-        _petVisible = true;
-        _anchor = anchor;
-        PlacePotions(anchor);
-        if (!_primaryPotion.IsVisible) _primaryPotion.Show();
-        if (!_secondaryPotion.IsVisible) _secondaryPotion.Show();
-        if (justShown || DateTimeOffset.Now - _lastUsageAttempt >= TimeSpan.FromSeconds(30))
-        {
-            await RefreshUsageAsync(force: justShown);
+            var justShown = !_petVisible;
+            _petVisible = true;
+            _anchor = anchor;
+            PlacePotions(anchor);
+            if (!_primaryPotion.IsVisible) _primaryPotion.Show();
+            if (!_secondaryPotion.IsVisible) _secondaryPotion.Show();
+            if (justShown || DateTimeOffset.Now - _lastUsageAttempt >= TimeSpan.FromSeconds(30))
+            {
+                _ = RefreshUsageAsync(force: justShown);
+            }
         }
-        RunScheduledCleanupIfNeeded();
+        catch (Exception error)
+        {
+            AppLog.Write($"Tick failed: {error.GetType().Name}: {error.Message}");
+            HideHud();
+        }
     }
 
     private void HideHud()
     {
+        if (_petVisible)
+        {
+            _visibilityGeneration++;
+            _usageCancellation?.Cancel();
+        }
         _petVisible = false;
         _anchor = null;
         _primaryPotion.Hide();
@@ -118,28 +137,52 @@ public sealed class MainController : IDisposable
     {
         if (!_petVisible || _refreshing) return;
         if (!force && DateTimeOffset.Now - _lastUsageAttempt < TimeSpan.FromSeconds(30)) return;
+        var generation = _visibilityGeneration;
+        using var cancellation = new CancellationTokenSource();
+        _usageCancellation = cancellation;
         _refreshing = true;
         _lastUsageAttempt = DateTimeOffset.Now;
         _details.Update(_usage, true);
         try
         {
-            var refreshed = await _usageService.RefreshAsync();
-            if (refreshed is not null)
+            var refreshed = await _usageService.RefreshAsync(cancellation.Token);
+            if (refreshed is not null && _petVisible && generation == _visibilityGeneration)
             {
                 _usage = refreshed;
+                _lastUsageSuccess = DateTimeOffset.Now;
                 _primaryPotion.UpdateUsage(_usage.PrimaryRemaining, _usage.PrimaryReset, _usage.Source);
                 _secondaryPotion.UpdateUsage(_usage.SecondaryRemaining, _usage.SecondaryReset, _usage.Source);
                 foreach (var alert in _alertService.Evaluate(_usage, _settings)) ShowAlert(alert);
             }
+            else if (refreshed is null)
+            {
+                MarkUsageStaleIfNeeded();
+            }
         }
-        catch (HttpRequestException) { }
+        catch (HttpRequestException error) { AppLog.Write($"Usage request failed: {error.Message}"); MarkUsageStaleIfNeeded(); }
         catch (TaskCanceledException) { }
+        catch (JsonException error) { AppLog.Write($"Usage JSON failed: {error.Message}"); MarkUsageStaleIfNeeded(); }
+        catch (InvalidOperationException error) { AppLog.Write($"Usage payload failed: {error.Message}"); MarkUsageStaleIfNeeded(); }
         finally
         {
             _refreshing = false;
+            if (generation != _visibilityGeneration) _lastUsageAttempt = DateTimeOffset.MinValue;
+            if (ReferenceEquals(_usageCancellation, cancellation)) _usageCancellation = null;
             _details.Update(_usage, false);
             UpdateTrayText();
         }
+    }
+
+    private void MarkUsageStaleIfNeeded()
+    {
+        if (_usage.Source == "none" ||
+            _lastUsageSuccess == DateTimeOffset.MinValue ||
+            DateTimeOffset.Now - _lastUsageSuccess < TimeSpan.FromMinutes(2) ||
+            _usage.Source == "stale") return;
+        _usage = _usage with { Source = "stale" };
+        _primaryPotion.UpdateUsage(_usage.PrimaryRemaining, _usage.PrimaryReset, _usage.Source);
+        _secondaryPotion.UpdateUsage(_usage.SecondaryRemaining, _usage.SecondaryReset, _usage.Source);
+        AppLog.Write("Usage data marked stale after repeated refresh failures.");
     }
 
     private void ShowDetails()
@@ -214,12 +257,14 @@ public sealed class MainController : IDisposable
         if (!_petVisible) { _tray.Text = "Codex 포션 HUD · 펫 숨김"; return; }
         var primary = _usage.PrimaryRemaining is null ? "--" : $"{Math.Round(_usage.PrimaryRemaining.Value):0}%";
         var weekly = _usage.SecondaryRemaining is null ? "--" : $"{Math.Round(_usage.SecondaryRemaining.Value):0}%";
-        _tray.Text = $"Codex 포션 HUD · 5H {primary} · WK {weekly}";
+        var state = _usage.Source == "stale" ? " · 갱신 지연" : string.Empty;
+        _tray.Text = $"Codex 포션 HUD · 5H {primary} · WK {weekly}{state}";
     }
 
     public void Dispose()
     {
         _timer.Stop();
+        _usageCancellation?.Cancel();
         _tray.Visible = false;
         _tray.Dispose();
         _usageService.Dispose();

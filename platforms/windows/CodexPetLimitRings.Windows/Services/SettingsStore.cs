@@ -23,7 +23,12 @@ public sealed class SettingsStore
         return settings;
     }
 
-    public AlertDeliveryState LoadAlertState() => Read<AlertDeliveryState>(AlertStatePath) ?? new AlertDeliveryState();
+    public AlertDeliveryState LoadAlertState()
+    {
+        var state = Read<AlertDeliveryState>(AlertStatePath) ?? new AlertDeliveryState();
+        state.Normalize();
+        return state;
+    }
     public void SaveSettings(OverlaySettings value) { value.Normalize(); Write(SettingsPath, value); }
     public void SaveAlertState(AlertDeliveryState value) => Write(AlertStatePath, value);
 
@@ -39,9 +44,17 @@ public sealed class SettingsStore
 
     private void Write<T>(string path, T value)
     {
-        Directory.CreateDirectory(DataDirectory);
         var temporary = path + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(value, JsonOptions));
-        File.Move(temporary, path, true);
+        try
+        {
+            Directory.CreateDirectory(DataDirectory);
+            File.WriteAllText(temporary, JsonSerializer.Serialize(value, JsonOptions));
+            File.Move(temporary, path, true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Write($"Settings write failed: {error.Message}");
+            try { File.Delete(temporary); } catch { }
+        }
     }
 }

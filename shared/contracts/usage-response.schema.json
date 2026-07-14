@@ -13,14 +13,20 @@
         "secondary_window": { "$ref": "#/$defs/window" }
       },
       "additionalProperties": true
-    }
+    },
+    "rate_limits": { "$ref": "#/properties/rate_limit" }
   },
   "$defs": {
     "window": {
       "type": "object",
       "properties": {
         "used_percent": { "type": ["number", "null"] },
-        "reset_at": { "type": ["number", "null"] }
+        "remaining_percent": { "type": ["number", "null"] },
+        "reset_at": { "type": ["number", "string", "null"] },
+        "reset_after_seconds": { "type": ["number", "null"] },
+        "limit_window_seconds": { "type": ["number", "null"] },
+        "window_seconds": { "type": ["number", "null"] },
+        "window_minutes": { "type": ["number", "null"] }
       },
       "additionalProperties": true
     }

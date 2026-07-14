@@ -7,49 +7,74 @@ namespace CodexPetLimitRings.Windows.Services;
 public sealed class UsageService : IDisposable
 {
     private readonly HttpClient _client = new() { Timeout = TimeSpan.FromSeconds(7) };
-    private readonly string _authPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex", "auth.json");
+    private readonly string _authPath = Path.Combine(CodexPaths.Home, "auth.json");
 
     public async Task<UsageSnapshot?> RefreshAsync(CancellationToken cancellationToken = default)
     {
-        var token = ReadToken();
-        if (string.IsNullOrWhiteSpace(token)) return null;
+        var credentials = ReadCredentials();
+        var accessToken = credentials?.AccessToken;
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            AppLog.Write("Live usage unavailable: no Codex access token.");
+            return null;
+        }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://chatgpt.com/backend-api/wham/usage");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (!string.IsNullOrWhiteSpace(credentials?.AccountId))
+        {
+            request.Headers.TryAddWithoutValidation("ChatGPT-Account-Id", credentials.AccountId);
+        }
         using var response = await _client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            AppLog.Write($"Live usage returned HTTP {(int)response.StatusCode}.");
+            return null;
+        }
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
         return Parse(document.RootElement);
     }
 
-    private string? ReadToken()
+    private Credentials? ReadCredentials()
     {
         try
         {
             using var stream = new FileStream(_authPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             using var document = JsonDocument.Parse(stream);
-            return document.RootElement.TryGetProperty("tokens", out var tokens) &&
-                   tokens.TryGetProperty("access_token", out var value)
-                ? value.GetString()
+            if (!document.RootElement.TryGetProperty("tokens", out var tokens) || tokens.ValueKind is not JsonValueKind.Object)
+            {
+                return null;
+            }
+            var accessToken = tokens.TryGetProperty("access_token", out var token) && token.ValueKind is JsonValueKind.String
+                ? token.GetString()
                 : null;
+            var accountId = tokens.TryGetProperty("account_id", out var account) && account.ValueKind is JsonValueKind.String
+                ? account.GetString()
+                : null;
+            return new Credentials(accessToken, accountId);
         }
         catch { return null; }
     }
 
     private static UsageSnapshot? Parse(JsonElement root)
     {
-        var container = root.TryGetProperty("rate_limit", out var rateLimit) ? rateLimit : root;
-        var primary = FindWindow(container, "primary_window", "primary");
-        var secondary = FindWindow(container, "secondary_window", "secondary");
-        if (secondary is null && primary?.WindowSeconds >= TimeSpan.FromDays(7).TotalSeconds)
+        if (root.ValueKind is not JsonValueKind.Object) return null;
+        var container = root.TryGetProperty("rate_limit", out var rateLimit) && rateLimit.ValueKind is JsonValueKind.Object
+            ? rateLimit
+            : root.TryGetProperty("rate_limits", out var rateLimits) && rateLimits.ValueKind is JsonValueKind.Object
+                ? rateLimits
+                : root;
+        var primary = FindWindow(container, "primary", "primary_window");
+        var secondary = FindWindow(container, "secondary", "secondary_window");
+        var primaryLooksWeekly = primary?.WindowSeconds >= TimeSpan.FromDays(1).TotalSeconds;
+        var secondaryLooksShort = secondary?.WindowSeconds < TimeSpan.FromDays(1).TotalSeconds;
+        if (primaryLooksWeekly && (secondary is null || secondaryLooksShort))
         {
-            secondary = primary;
-            primary = null;
+            (primary, secondary) = (secondary, primary);
         }
-        if (primary is null && secondary is null) return null;
+        if (primary?.Used is null && secondary?.Used is null) return null;
         return new UsageSnapshot(
             primary?.Used,
             secondary?.Used,
@@ -61,18 +86,96 @@ public sealed class UsageService : IDisposable
 
     private static WindowValue? FindWindow(JsonElement container, string preferred, string fallback)
     {
-        JsonElement value;
-        if (!container.TryGetProperty(preferred, out value) && !container.TryGetProperty(fallback, out value)) return null;
-        double? used = value.TryGetProperty("used_percent", out var usedElement) && usedElement.TryGetDouble(out var number) ? number : null;
-        long? reset = value.TryGetProperty("reset_at", out var resetElement) && resetElement.TryGetInt64(out var timestamp) ? timestamp : null;
-        double? windowSeconds = value.TryGetProperty("limit_window_seconds", out var secondsElement) && secondsElement.TryGetDouble(out var seconds)
-            ? seconds
-            : value.TryGetProperty("window_minutes", out var minutesElement) && minutesElement.TryGetDouble(out var minutes)
-                ? minutes * 60
-                : null;
+        if (container.ValueKind is not JsonValueKind.Object) return null;
+        if (TryObject(container, preferred, out var preferredValue))
+        {
+            var parsed = ParseWindow(preferredValue);
+            if (parsed.Used is not null) return parsed;
+        }
+        return TryObject(container, fallback, out var fallbackValue) ? ParseWindow(fallbackValue) : null;
+    }
+
+    private static WindowValue ParseWindow(JsonElement value)
+    {
+        double? used = TryDouble(value, "used_percent");
+        if (used is null && TryDouble(value, "remaining_percent") is { } remaining)
+        {
+            used = 100 - remaining;
+        }
+        if (used is { } usedValue && !double.IsFinite(usedValue)) used = null;
+        var reset = ReadReset(value);
+        double? windowSeconds = TryDouble(value, "limit_window_seconds")
+            ?? TryDouble(value, "window_seconds")
+            ?? (TryDouble(value, "window_minutes") is { } minutes ? minutes * 60 : null);
+        if (windowSeconds is { } duration && !double.IsFinite(duration)) windowSeconds = null;
         return new WindowValue(used, reset, windowSeconds);
     }
 
+    private static bool TryObject(JsonElement parent, string name, out JsonElement value)
+    {
+        return parent.TryGetProperty(name, out value) && value.ValueKind is JsonValueKind.Object;
+    }
+
+    private static double? TryDouble(JsonElement parent, string name)
+    {
+        if (!parent.TryGetProperty(name, out var value)) return null;
+        if (value.ValueKind is JsonValueKind.Number && value.TryGetDouble(out var number)) return number;
+        return value.ValueKind is JsonValueKind.String && double.TryParse(
+            value.GetString(),
+            System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out number)
+            ? number
+            : null;
+    }
+
+    private static long? ReadReset(JsonElement value)
+    {
+        foreach (var name in new[] { "reset_at", "resets_at", "reset_time", "expires_at", "window_reset_at" })
+        {
+            if (!value.TryGetProperty(name, out var reset)) continue;
+            if (reset.ValueKind is JsonValueKind.Number && reset.TryGetInt64(out var timestamp)) return ValidTimestamp(timestamp);
+            if (reset.ValueKind is JsonValueKind.Number && reset.TryGetDouble(out var numericTimestamp) &&
+                double.IsFinite(numericTimestamp) && numericTimestamp is >= long.MinValue and <= long.MaxValue)
+            {
+                return ValidTimestamp((long)numericTimestamp);
+            }
+            if (reset.ValueKind is JsonValueKind.String && long.TryParse(reset.GetString(), out timestamp))
+            {
+                return ValidTimestamp(timestamp);
+            }
+            if (reset.ValueKind is JsonValueKind.String && DateTimeOffset.TryParse(reset.GetString(), out var date))
+            {
+                return date.ToUnixTimeSeconds();
+            }
+        }
+        foreach (var name in new[] { "reset_after_seconds", "seconds_until_reset", "reset_in_seconds" })
+        {
+            if (TryDouble(value, name) is { } seconds)
+            {
+                if (!double.IsFinite(seconds)) return null;
+                try { return DateTimeOffset.UtcNow.AddSeconds(seconds).ToUnixTimeSeconds(); }
+                catch (ArgumentOutOfRangeException) { return null; }
+            }
+        }
+        return null;
+    }
+
+    private static long? ValidTimestamp(long timestamp)
+    {
+        if (timestamp > 999_999_999_999) timestamp /= 1000;
+        try
+        {
+            _ = DateTimeOffset.FromUnixTimeSeconds(timestamp);
+            return timestamp;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
     public void Dispose() => _client.Dispose();
+    private sealed record Credentials(string? AccessToken, string? AccountId);
     private sealed record WindowValue(double? Used, long? Reset, double? WindowSeconds);
 }

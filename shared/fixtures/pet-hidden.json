@@ -1,8 +1,13 @@
 {
   "electron-avatar-overlay-open": false,
   "electron-avatar-overlay-bounds": {
+    "x": 1439,
+    "y": 635,
+    "width": 356,
+    "height": 320,
     "displayId": 1,
     "displayBounds": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
-    "anchor": { "x": 1650, "y": 820, "width": 117, "height": 127 }
+    "anchor": { "x": 1650, "y": 820, "width": 117, "height": 127 },
+    "mascot": { "left": 211, "top": 185, "width": 117, "height": 127 }
   }
 }

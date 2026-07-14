@@ -22,5 +22,9 @@ Get-Process CodexPetLimitRings -ErrorAction SilentlyContinue | Stop-Process -For
 New-Item $InstallRoot -ItemType Directory -Force | Out-Null
 Copy-Item (Join-Path $Artifact "*") $InstallRoot -Recurse -Force
 New-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "CodexPetLimitRings" -Value ('"' + $Executable + '"') -PropertyType String -Force | Out-Null
-Start-Process $Executable
+$Process = Start-Process $Executable -PassThru
+Start-Sleep -Seconds 1
+if ($Process.HasExited) {
+    throw "Codex Pet HUD가 시작 직후 종료되었습니다. $env:LOCALAPPDATA\CodexPetLimitRings\Logs\runtime.log를 확인하세요."
+}
 Write-Host "Installed Codex Pet HUD: $Executable"
