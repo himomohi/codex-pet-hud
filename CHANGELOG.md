@@ -9,6 +9,14 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
 
+## [0.1.3] - 2026-07-15
+
+### Fixed
+
+- Remove the Internet zone marker from the installed Windows executable before its first launch
+- Launch the Windows app from its installed directory and register startup only after a successful launch
+- Verify that both Windows release archives contain the corrected installer behavior
+
 ## [0.1.2] - 2026-07-15
 
 ### Fixed
@@ -47,7 +55,8 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/himomohi/codex-pet-hud/releases/tag/v0.1.0
