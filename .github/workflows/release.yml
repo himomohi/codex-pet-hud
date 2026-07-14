@@ -59,8 +59,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > release-notes.md <<'NOTES'
-          ## Codex Pet HUD preview
+          {
+          echo "## $GITHUB_REF_NAME · Codex Pet HUD"
+          cat <<'NOTES'
 
           Download the archive for your platform and verify it with `SHA256SUMS.txt`.
 
@@ -71,8 +72,9 @@ jobs:
 
           See the [changelog](https://github.com/himomohi/codex-pet-hud/blob/main/CHANGELOG.md) and [project website](https://himomohi.github.io/codex-pet-hud/).
           NOTES
+          } > release-notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
             --verify-tag \
             --prerelease \
-            --title "Codex Pet HUD $GITHUB_REF_NAME · Unsigned Preview" \
+            --title "$GITHUB_REF_NAME · Codex Pet HUD · Unsigned Preview" \
             --notes-file release-notes.md
