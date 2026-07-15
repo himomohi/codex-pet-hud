@@ -59,20 +59,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          {
-          echo "## $GITHUB_REF_NAME · Codex Pet HUD"
-          cat <<'NOTES'
-
-          Download the archive for your platform and verify it with `SHA256SUMS.txt`.
-
-          > [!WARNING]
-          > These preview builds are not Developer ID notarized or Authenticode signed. macOS Gatekeeper or Windows SmartScreen may display an unknown-developer warning. Download only from this official repository.
-
-          The live usage integration reads the existing Codex access token in memory and calls an undocumented internal endpoint. Tokens, logs, and Codex data are never included in release assets.
-
-          See the [changelog](https://github.com/himomohi/codex-pet-hud/blob/main/CHANGELOG.md) and [project website](https://himomohi.github.io/codex-pet-hud/).
-          NOTES
-          } > release-notes.md
+          ./scripts/release/build-notes.sh "$GITHUB_REF_NAME" > release-notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
             --verify-tag \
             --latest \

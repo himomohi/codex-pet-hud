@@ -9,8 +9,9 @@ Codex Pet HUD publishes unsigned preview builds from version tags. The tag is th
 3. Commit and push `main`.
 4. Create and push an annotated `vX.Y.Z` tag.
 5. The Release workflow builds macOS universal, Windows x64, and Windows ARM64 archives in clean GitHub runners.
-6. The publish job rejects forbidden files, writes `SHA256SUMS.txt`, verifies the checksums, and creates the latest GitHub Release marked **Unsigned Preview**.
-7. Confirm every asset from the public download page before announcing the release.
+6. The publish job rejects forbidden files, writes `SHA256SUMS.txt`, verifies the checksums, and builds categorized release notes from that version's `CHANGELOG.md` section.
+7. The workflow creates the latest GitHub Release marked **Unsigned Preview** and verifies that GitHub exposes the tag as the latest release.
+8. Confirm every asset and the categorized changes from the public release page before announcing the release.
 
 ## Expected assets
 
