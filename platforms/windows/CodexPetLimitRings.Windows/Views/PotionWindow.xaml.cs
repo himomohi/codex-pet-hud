@@ -1,5 +1,6 @@
 using System.Windows;
-using System.Windows.Input;
+using System.Windows.Automation;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using CodexPetLimitRings.Windows.Interop;
@@ -8,13 +9,21 @@ namespace CodexPetLimitRings.Windows.Views;
 
 public partial class PotionWindow : Window
 {
+    private const double GlassSize = 67;
+    private readonly string _accessibleLabel;
     public event Action? PotionClicked;
 
-    public PotionWindow(string label, System.Windows.Media.Color top, System.Windows.Media.Color bottom)
+    public PotionWindow(string label, System.Windows.Media.Color dark, System.Windows.Media.Color mid, System.Windows.Media.Color bright, System.Windows.Media.Color surface)
     {
         InitializeComponent();
         LabelText.Text = label;
-        Liquid.Fill = new LinearGradientBrush(top, bottom, 90);
+        _accessibleLabel = label == "5H" ? "5시간 포션" : "주간 포션";
+        LiquidDark.Color = dark;
+        LiquidMid.Color = mid;
+        LiquidBright.Color = bright;
+        LiquidSurface.Fill = new SolidColorBrush(surface);
+        AutomationProperties.SetName(this, _accessibleLabel);
+        AutomationProperties.SetName(Root, _accessibleLabel);
         SourceInitialized += (_, _) => NativeMethods.MakeNoActivate(this);
     }
 
@@ -22,13 +31,24 @@ public partial class PotionWindow : Window
     {
         var percent = remaining is null ? 0 : Math.Clamp(remaining.Value, 0, 100);
         PercentText.Text = remaining is null ? "—" : $"{Math.Round(percent):0}%";
-        var height = 65 * percent / 100;
-        LiquidClip.Rect = new Rect(0, 65 - height, 65, height);
-        Opacity = remaining is null ? 0.65 : 1;
+        var height = GlassSize * percent / 100;
+        Liquid.Height = height;
+        Canvas.SetTop(Liquid, GlassSize - height);
+        var hasLiquid = remaining is not null && height > 0.5;
+        Liquid.Visibility = hasLiquid ? Visibility.Visible : Visibility.Hidden;
+        LiquidSurface.Visibility = hasLiquid && percent < 99.5 ? Visibility.Visible : Visibility.Hidden;
+        LiquidBubble.Visibility = hasLiquid ? Visibility.Visible : Visibility.Hidden;
+        Canvas.SetTop(LiquidSurface, GlassSize - height - 2.5);
+        Canvas.SetTop(LiquidBubble, Math.Max(GlassSize - height + 4, GlassSize * 0.72));
+        var resetText = FormatResetRemaining(resetAt);
+        var usageText = remaining is null ? "사용량 데이터 없음" : $"남은 사용량 {Math.Round(percent):0}%";
+        var accessibleText = $"{_accessibleLabel}, {usageText}, 초기화까지 {resetText}";
+        AutomationProperties.SetName(this, accessibleText);
+        AutomationProperties.SetName(Root, accessibleText);
         Root.ToolTip = string.Join(Environment.NewLine,
-            remaining is null ? "사용량 데이터 없음" : $"남은 사용량 {Math.Round(percent):0}%",
+            usageText,
             source == "live" ? "실시간 기준" : source == "none" ? "데이터 대기" : "최근 기록 기준",
-            $"초기화까지 {FormatResetRemaining(resetAt)}");
+            $"초기화까지 {resetText}");
     }
 
     private static string FormatResetRemaining(long? resetAt)
@@ -45,10 +65,22 @@ public partial class PotionWindow : Window
 
     public void ApplyScale(double scale)
     {
-        Root.LayoutTransform = new ScaleTransform(scale, scale);
+        var typeScale = Math.Clamp(scale, 0.75, 1.5);
         Width = 92 * scale;
         Height = 110 * scale;
+        PercentBackdrop.Width = 34 * typeScale;
+        PercentBackdrop.Height = 18 * typeScale;
+        PercentBackdrop.CornerRadius = new CornerRadius(3 * typeScale);
+        PercentText.FontSize = 12 * typeScale;
+        Canvas.SetLeft(PercentBackdrop, 46 * scale - PercentBackdrop.Width / 2);
+        Canvas.SetTop(PercentBackdrop, 58 * scale - PercentBackdrop.Height / 2);
+        LabelContainer.Width = 34 * typeScale;
+        LabelContainer.Height = 12 * typeScale;
+        LabelContainer.CornerRadius = new CornerRadius(3 * typeScale);
+        LabelText.FontSize = 8 * typeScale;
+        Canvas.SetLeft(LabelContainer, 46 * scale - LabelContainer.Width / 2);
+        Canvas.SetTop(LabelContainer, 93 * scale - LabelContainer.Height / 2);
     }
 
-    private void Root_OnMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => PotionClicked?.Invoke();
+    private void Root_OnClick(object sender, RoutedEventArgs e) => PotionClicked?.Invoke();
 }

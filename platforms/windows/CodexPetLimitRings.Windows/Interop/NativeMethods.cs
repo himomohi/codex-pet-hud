@@ -42,6 +42,9 @@ internal static class NativeMethods
     private static extern bool GetWindowRect(IntPtr handle, out Rect rect);
 
     [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr handle);
+
+    [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr handle, out uint processId);
 
     [DllImport("dwmapi.dll")]
@@ -56,8 +59,9 @@ internal static class NativeMethods
 
     public static PetAnchor? FindVisiblePetAnchor(PetWindowCandidate candidate)
     {
-        Rect? found = null;
+        PetAnchor? found = null;
         long bestScore = long.MaxValue;
+        var ambiguous = false;
         EnumWindows((handle, _) =>
         {
             if (!IsActuallyVisible(handle) || !IsCodexWindow(handle) || !GetWindowRect(handle, out var rect))
@@ -65,31 +69,81 @@ internal static class NativeMethods
                 return true;
             }
 
-            var width = rect.Right - rect.Left;
-            var height = rect.Bottom - rect.Top;
+            var dpiScale = GetDpiScale(handle);
+            var width = (rect.Right - rect.Left) / dpiScale;
+            var height = (rect.Bottom - rect.Top) / dpiScale;
             var widthDelta = Math.Abs(width - (int)Math.Round(candidate.WindowWidth));
             var heightDelta = Math.Abs(height - (int)Math.Round(candidate.WindowHeight));
             if (widthDelta > 48 || heightDelta > 48) return true;
 
-            var positionDelta = Math.Abs((long)rect.Left - (long)Math.Round(candidate.WindowX)) +
-                                Math.Abs((long)rect.Top - (long)Math.Round(candidate.WindowY));
-            var score = (long)(widthDelta + heightDelta) * 10_000 + positionDelta;
+            var screen = System.Windows.Forms.Screen.FromHandle(handle);
+            var displayX = candidate.DisplayX.GetValueOrDefault();
+            var displayY = candidate.DisplayY.GetValueOrDefault();
+            var hasDisplayBounds = candidate.DisplayX is not null &&
+                                   candidate.DisplayY is not null &&
+                                   candidate.DisplayWidth is not null &&
+                                   candidate.DisplayHeight is not null;
+            var liveWindowX = hasDisplayBounds
+                ? displayX + (rect.Left - screen.Bounds.Left) / dpiScale
+                : candidate.WindowX;
+            var liveWindowY = hasDisplayBounds
+                ? displayY + (rect.Top - screen.Bounds.Top) / dpiScale
+                : candidate.WindowY;
+            var positionDelta = Math.Abs(liveWindowX - candidate.WindowX) +
+                                Math.Abs(liveWindowY - candidate.WindowY);
+            var displaySizeDelta = hasDisplayBounds
+                ? Math.Abs(screen.Bounds.Width / dpiScale - candidate.DisplayWidth!.Value) +
+                  Math.Abs(screen.Bounds.Height / dpiScale - candidate.DisplayHeight!.Value)
+                : 0;
+            var score = (long)Math.Round(
+                (widthDelta + heightDelta) * 10_000 +
+                displaySizeDelta * 100 +
+                positionDelta);
             if (score < bestScore)
             {
                 bestScore = score;
-                found = rect;
+                ambiguous = false;
+                var work = screen.WorkingArea;
+                // Electron persists the overlay and mascot bounds in DIPs. Keep that
+                // coordinate space as the WPF contract, and only map native work-area
+                // pixels relative to the matched window to avoid mixed-DPI origin drift.
+                var workX = hasDisplayBounds
+                    ? displayX + (work.Left - screen.Bounds.Left) / dpiScale
+                    : candidate.WindowX + (work.Left - rect.Left) / dpiScale;
+                var workY = hasDisplayBounds
+                    ? displayY + (work.Top - screen.Bounds.Top) / dpiScale
+                    : candidate.WindowY + (work.Top - rect.Top) / dpiScale;
+                var workRight = hasDisplayBounds
+                    ? displayX + (work.Right - screen.Bounds.Left) / dpiScale
+                    : candidate.WindowX + (work.Right - rect.Left) / dpiScale;
+                var workBottom = hasDisplayBounds
+                    ? displayY + (work.Bottom - screen.Bounds.Top) / dpiScale
+                    : candidate.WindowY + (work.Bottom - rect.Top) / dpiScale;
+                found = new PetAnchor(
+                    liveWindowX + candidate.MascotLeft,
+                    liveWindowY + candidate.MascotTop,
+                    candidate.MascotWidth,
+                    candidate.MascotHeight,
+                    candidate.DisplayId,
+                    workX,
+                    workY,
+                    workRight - workX,
+                    workBottom - workY);
+            }
+            else if (score == bestScore)
+            {
+                ambiguous = true;
             }
             return true;
         }, IntPtr.Zero);
 
-        return found is { } live
-            ? new PetAnchor(
-                live.Left + candidate.MascotLeft,
-                live.Top + candidate.MascotTop,
-                candidate.MascotWidth,
-                candidate.MascotHeight,
-                candidate.DisplayId)
-            : null;
+        return ambiguous ? null : found;
+    }
+
+    private static double GetDpiScale(IntPtr handle)
+    {
+        var dpi = GetDpiForWindow(handle);
+        return dpi > 0 ? dpi / 96.0 : 1;
     }
 
     private static bool IsActuallyVisible(IntPtr handle)

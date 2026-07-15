@@ -7,7 +7,11 @@ public partial class UsageDetailsWindow : Window
     private bool _allowClose;
     public event Action? RefreshRequested;
 
-    public UsageDetailsWindow() => InitializeComponent();
+    public UsageDetailsWindow()
+    {
+        InitializeComponent();
+        Deactivated += (_, _) => Hide();
+    }
 
     public void Update(UsageSnapshot usage, bool refreshing)
     {

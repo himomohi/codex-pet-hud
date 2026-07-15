@@ -16,8 +16,8 @@ public sealed class MainController : IDisposable
     private readonly CacheMaintenanceService _cacheService;
     private readonly ThresholdAlertService _alertService;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
-    private readonly PotionWindow _primaryPotion = new("5H", System.Windows.Media.Color.FromRgb(251, 73, 52), System.Windows.Media.Color.FromRgb(127, 29, 29));
-    private readonly PotionWindow _secondaryPotion = new("WK", System.Windows.Media.Color.FromRgb(96, 165, 250), System.Windows.Media.Color.FromRgb(23, 37, 84));
+    private readonly PotionWindow _primaryPotion = new("5H", System.Windows.Media.Color.FromRgb(56, 4, 6), System.Windows.Media.Color.FromRgb(184, 9, 14), System.Windows.Media.Color.FromRgb(255, 61, 20), System.Windows.Media.Color.FromRgb(255, 107, 31));
+    private readonly PotionWindow _secondaryPotion = new("WK", System.Windows.Media.Color.FromRgb(6, 18, 61), System.Windows.Media.Color.FromRgb(10, 82, 194), System.Windows.Media.Color.FromRgb(20, 199, 235), System.Windows.Media.Color.FromRgb(46, 224, 255));
     private readonly UsageDetailsWindow _details = new();
     private readonly SettingsWindow _settingsWindow = new();
     private readonly Forms.NotifyIcon _tray = new();
@@ -41,8 +41,8 @@ public sealed class MainController : IDisposable
     public void Start()
     {
         ConfigureTray();
-        _primaryPotion.PotionClicked += ShowDetails;
-        _secondaryPotion.PotionClicked += ShowDetails;
+        _primaryPotion.PotionClicked += () => ShowDetails(_primaryPotion);
+        _secondaryPotion.PotionClicked += () => ShowDetails(_secondaryPotion);
         _details.RefreshRequested += () => _ = RefreshUsageAsync(force: true);
         _settingsWindow.SettingsChanged += ApplySettings;
         _settingsWindow.CleanupRequested += RunCleanup;
@@ -100,18 +100,19 @@ public sealed class MainController : IDisposable
 
     private void PlacePotions(PetAnchor anchor)
     {
-        var screen = Forms.Screen.FromPoint(new Point((int)Math.Round(anchor.X + anchor.Width / 2), (int)Math.Round(anchor.Y + anchor.Height / 2)));
-        var work = screen.WorkingArea;
-        var scale = _settings.Scale;
-        var availableSide = Math.Max(0, Math.Min(anchor.X - work.Left, work.Right - anchor.Right));
-        var gap = _settings.PotionGap * scale;
+        var baseDiameter = Math.Clamp(Math.Max(anchor.Width, anchor.Height) * 0.62, 60, 78);
+        var baseScale = baseDiameter / 78;
+        var minimumScale = 0.5 * baseScale;
+        var scale = Math.Max(minimumScale, _settings.Scale * baseScale);
+        var availableSide = Math.Max(0, Math.Min(anchor.X - anchor.WorkX, anchor.WorkRight - anchor.Right));
+        var gap = _settings.PotionGap * _settings.Scale;
         var potionWidth = 92 * scale;
-        if (potionWidth + gap > availableSide && availableSide > 46)
+        if (potionWidth + gap > availableSide)
         {
             gap = Math.Max(0, availableSide - potionWidth);
-            if (potionWidth > availableSide)
+            if (potionWidth > availableSide && availableSide > 0)
             {
-                scale = Math.Max(0.5, Math.Min(scale, availableSide / 92));
+                scale = Math.Max(minimumScale, Math.Min(scale, availableSide / 92));
                 potionWidth = 92 * scale;
                 gap = Math.Max(0, availableSide - potionWidth);
             }
@@ -121,11 +122,11 @@ public sealed class MainController : IDisposable
         _secondaryPotion.ApplyScale(scale);
         var potionHeight = 110 * scale;
         var y = anchor.CenterY - potionHeight / 2 + _settings.VerticalOffset;
-        y = Math.Clamp(y, work.Top, Math.Max(work.Top, work.Bottom - potionHeight));
+        y = Math.Clamp(y, anchor.WorkY, Math.Max(anchor.WorkY, anchor.WorkBottom - potionHeight));
         var leftX = anchor.X - gap - potionWidth + _settings.HorizontalOffset;
         var rightX = anchor.Right + gap + _settings.HorizontalOffset;
-        leftX = Math.Clamp(leftX, work.Left, Math.Max(work.Left, work.Right - potionWidth));
-        rightX = Math.Clamp(rightX, work.Left, Math.Max(work.Left, work.Right - potionWidth));
+        leftX = Math.Clamp(leftX, anchor.WorkX, Math.Max(anchor.WorkX, anchor.WorkRight - potionWidth));
+        rightX = Math.Clamp(rightX, anchor.WorkX, Math.Max(anchor.WorkX, anchor.WorkRight - potionWidth));
 
         _primaryPotion.Left = leftX;
         _primaryPotion.Top = y;
@@ -185,15 +186,26 @@ public sealed class MainController : IDisposable
         AppLog.Write("Usage data marked stale after repeated refresh failures.");
     }
 
-    private void ShowDetails()
+    private void ShowDetails(PotionWindow source)
     {
         if (!_petVisible || _anchor is null) return;
         _details.Update(_usage, _refreshing);
-        var work = Forms.Screen.FromPoint(new Point((int)_anchor.X, (int)_anchor.Y)).WorkingArea;
-        _details.Left = Math.Clamp(_anchor.X - _details.Width - 16, work.Left, Math.Max(work.Left, work.Right - _details.Width));
-        _details.Top = Math.Clamp(_anchor.Y - _details.Height - 12, work.Top, Math.Max(work.Top, work.Bottom - _details.Height));
+        PositionDetails(source, _details.MinHeight);
         if (!_details.IsVisible) _details.Show();
+        _details.UpdateLayout();
+        PositionDetails(source, _details.ActualHeight);
         _details.Activate();
+    }
+
+    private void PositionDetails(PotionWindow source, double detailsHeight)
+    {
+        if (_anchor is null) return;
+        var detailsWidth = double.IsNaN(_details.Width) ? _details.ActualWidth : _details.Width;
+        var preferredLeft = source == _primaryPotion
+            ? source.Left - detailsWidth - 12
+            : source.Left + source.Width + 12;
+        _details.Left = Math.Clamp(preferredLeft, _anchor.WorkX, Math.Max(_anchor.WorkX, _anchor.WorkRight - detailsWidth));
+        _details.Top = Math.Clamp(source.Top + (source.Height - detailsHeight) / 2, _anchor.WorkY, Math.Max(_anchor.WorkY, _anchor.WorkBottom - detailsHeight));
     }
 
     private void ShowSettings()
@@ -243,6 +255,7 @@ public sealed class MainController : IDisposable
         _tray.DoubleClick += (_, _) => ShowSettings();
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("사용량 지금 갱신", null, (_, _) => _ = RefreshUsageAsync(force: true));
+        menu.Items.Add("포션 상세 보기", null, (_, _) => ShowDetails(_primaryPotion));
         menu.Items.Add("세부 설정…", null, (_, _) => ShowSettings());
         menu.Items.Add("오버레이 위치 초기화", null, (_, _) => { _settings.HorizontalOffset = 0; _settings.VerticalOffset = 0; ApplySettings(_settings); });
         menu.Items.Add(new Forms.ToolStripSeparator());

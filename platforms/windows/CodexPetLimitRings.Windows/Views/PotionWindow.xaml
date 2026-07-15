@@ -3,24 +3,106 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Width="92" Height="110" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" Topmost="True" ShowInTaskbar="False"
-        ShowActivated="False" ResizeMode="NoResize">
-  <Grid x:Name="Root" Cursor="Hand" MouseLeftButtonUp="Root_OnMouseLeftButtonUp">
-    <Ellipse Width="78" Height="78" VerticalAlignment="Top" Margin="0,15,0,0"
-             Stroke="#AA8F69" StrokeThickness="6" Fill="#171717">
-      <Ellipse.Effect><DropShadowEffect BlurRadius="10" ShadowDepth="5" Opacity="0.45" /></Ellipse.Effect>
-    </Ellipse>
-    <Ellipse x:Name="Liquid" Width="65" Height="65" VerticalAlignment="Top" Margin="0,21,0,0"
-             Stroke="#161616" StrokeThickness="2">
-      <Ellipse.Clip><RectangleGeometry x:Name="LiquidClip" Rect="0,65,65,0" /></Ellipse.Clip>
-    </Ellipse>
-    <Border Width="34" Height="10" VerticalAlignment="Top" Margin="0,5,0,0"
-            Background="#201D19" BorderBrush="#AA8F69" BorderThickness="2" CornerRadius="3" />
-    <TextBlock x:Name="PercentText" Text="—" Foreground="White" FontSize="14" FontWeight="Bold"
-               HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,45,0,0" />
-    <Border Width="36" Height="16" VerticalAlignment="Bottom" Margin="0,0,0,3"
-            Background="#171717" BorderBrush="#AA8F69" BorderThickness="1" CornerRadius="3">
-      <TextBlock x:Name="LabelText" Text="5H" Foreground="White" FontSize="9" FontWeight="Bold"
-                 HorizontalAlignment="Center" VerticalAlignment="Center" />
-    </Border>
-  </Grid>
+        ShowActivated="False" ResizeMode="NoResize" UseLayoutRounding="True"
+        SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
+  <Window.Resources>
+    <RadialGradientBrush x:Key="MetalBrush" Center="0.34,0.28" GradientOrigin="0.30,0.22" RadiusX="0.82" RadiusY="0.82">
+      <GradientStop Color="#3A352F" Offset="0" />
+      <GradientStop Color="#211F1C" Offset="0.48" />
+      <GradientStop Color="#12110F" Offset="1" />
+    </RadialGradientBrush>
+    <LinearGradientBrush x:Key="BraceBrush" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#3A352F" Offset="0" />
+      <GradientStop Color="#211F1C" Offset="0.55" />
+      <GradientStop Color="#11100F" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="EmptyGlassBrush" StartPoint="0,0.5" EndPoint="1,0.5">
+      <GradientStop Color="#F0090909" Offset="0" />
+      <GradientStop Color="#802E2E2E" Offset="0.5" />
+      <GradientStop Color="#DB0A0A0A" Offset="1" />
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="MetalEdgeBrush" Color="#E07D6E57" />
+  </Window.Resources>
+
+  <Button x:Name="Root" Cursor="Hand" Click="Root_OnClick" Focusable="False"
+          Background="Transparent" BorderThickness="0" Padding="0" Margin="0"
+          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+          ToolTipService.InitialShowDelay="250">
+    <Button.Template>
+      <ControlTemplate TargetType="Button">
+        <ContentPresenter Content="{TemplateBinding Content}"
+                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+      </ControlTemplate>
+    </Button.Template>
+    <Grid>
+      <Viewbox Stretch="Uniform">
+        <Canvas Width="92" Height="110">
+        <Ellipse Canvas.Left="7" Canvas.Top="19" Width="78" Height="78" Fill="#211F1C">
+          <Ellipse.Effect>
+            <DropShadowEffect Color="Black" BlurRadius="10" ShadowDepth="4" Opacity="0.52" />
+          </Ellipse.Effect>
+        </Ellipse>
+
+        <Path Data="M16,31.5 L2,51.8 L5,67.4 L17,89 L22,84 L13,58 Z"
+              Fill="{StaticResource BraceBrush}" Stroke="{StaticResource MetalEdgeBrush}" StrokeThickness="1.4" />
+        <Path Data="M76,31.5 L90,51.8 L87,67.4 L75,89 L70,84 L79,58 Z"
+              Fill="{StaticResource BraceBrush}" Stroke="{StaticResource MetalEdgeBrush}" StrokeThickness="1.4" />
+
+        <Border Canvas.Left="34.3" Canvas.Top="15" Width="23.4" Height="10" CornerRadius="2"
+                Background="{StaticResource MetalBrush}" BorderBrush="{StaticResource MetalEdgeBrush}" BorderThickness="1.2" />
+        <Border Canvas.Left="30.4" Canvas.Top="9" Width="31.2" Height="7" CornerRadius="2"
+                Background="#0E0E0E" BorderBrush="#B87D6E57" BorderThickness="1" />
+
+        <Ellipse Canvas.Left="7" Canvas.Top="19" Width="78" Height="78" Fill="{StaticResource MetalBrush}" />
+        <Ellipse Canvas.Left="12.5" Canvas.Top="24.5" Width="67" Height="67" Fill="{StaticResource EmptyGlassBrush}" />
+
+        <Canvas x:Name="GlassContent" Canvas.Left="12.5" Canvas.Top="24.5" Width="67" Height="67">
+          <Canvas.Clip>
+            <EllipseGeometry Center="33.5,33.5" RadiusX="33.5" RadiusY="33.5" />
+          </Canvas.Clip>
+          <Rectangle x:Name="Liquid" Canvas.Left="0" Canvas.Top="67" Width="67" Height="0">
+            <Rectangle.Fill>
+              <LinearGradientBrush StartPoint="0.5,1" EndPoint="0.5,0">
+                <GradientStop x:Name="LiquidDark" Color="#380406" Offset="0" />
+                <GradientStop x:Name="LiquidMid" Color="#B8090E" Offset="0.55" />
+                <GradientStop x:Name="LiquidBright" Color="#FF3D14" Offset="1" />
+              </LinearGradientBrush>
+            </Rectangle.Fill>
+          </Rectangle>
+          <Ellipse x:Name="LiquidSurface" Canvas.Left="1" Canvas.Top="64.5" Width="65" Height="5" Opacity="0.92" Visibility="Hidden" />
+          <Ellipse x:Name="LiquidBubble" Canvas.Left="41.5" Canvas.Top="48" Width="4.7" Height="4.7"
+                   Fill="#4DFFFFFF" Visibility="Hidden" />
+        </Canvas>
+
+        <Ellipse Canvas.Left="9" Canvas.Top="21" Width="74" Height="74" Fill="Transparent"
+                 Stroke="{StaticResource MetalEdgeBrush}" StrokeThickness="4.5" />
+        <Ellipse Canvas.Left="7" Canvas.Top="19" Width="78" Height="78" Fill="Transparent"
+                 Stroke="#C7000000" StrokeThickness="1.2" />
+
+        <Border Canvas.Left="25.9" Canvas.Top="35.2" Width="4.7" Height="16.1" CornerRadius="2.35"
+                Background="#57FFFFFF" />
+
+        <Border Canvas.Left="19.5" Canvas.Top="88" Width="53" Height="13" CornerRadius="3"
+                Background="{StaticResource MetalBrush}" BorderBrush="{StaticResource MetalEdgeBrush}" BorderThickness="1.2" />
+        </Canvas>
+      </Viewbox>
+
+      <Canvas IsHitTestVisible="False">
+        <Border x:Name="PercentBackdrop" Canvas.Left="29" Canvas.Top="49" Width="34" Height="18"
+                Background="#A6000000" CornerRadius="3">
+          <TextBlock x:Name="PercentText" Text="—" Foreground="White"
+                     FontFamily="Consolas, Segoe UI" FontSize="12" FontWeight="Bold"
+                     Typography.NumeralAlignment="Tabular"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+        <Border x:Name="LabelContainer" Canvas.Left="29" Canvas.Top="87" Width="34" Height="12"
+                Background="#D1000000" BorderBrush="#B37D6E57" BorderThickness="0.8" CornerRadius="3">
+          <TextBlock x:Name="LabelText" Text="5H" Foreground="White" FontFamily="Consolas, Segoe UI"
+                     FontSize="8" FontWeight="Bold" Typography.NumeralAlignment="Tabular"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+        </Border>
+      </Canvas>
+    </Grid>
+  </Button>
 </Window>

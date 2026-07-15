@@ -35,10 +35,21 @@ public sealed class OverlaySettings
     }
 }
 
-public sealed record PetAnchor(double X, double Y, double Width, double Height, string? DisplayId)
+public sealed record PetAnchor(
+    double X,
+    double Y,
+    double Width,
+    double Height,
+    string? DisplayId,
+    double WorkX,
+    double WorkY,
+    double WorkWidth,
+    double WorkHeight)
 {
     public double Right => X + Width;
     public double CenterY => Y + Height / 2;
+    public double WorkRight => WorkX + WorkWidth;
+    public double WorkBottom => WorkY + WorkHeight;
 }
 
 public sealed record PetWindowCandidate(
@@ -50,7 +61,11 @@ public sealed record PetWindowCandidate(
     double MascotTop,
     double MascotWidth,
     double MascotHeight,
-    string? DisplayId);
+    string? DisplayId,
+    double? DisplayX,
+    double? DisplayY,
+    double? DisplayWidth,
+    double? DisplayHeight);
 
 public sealed record UsageSnapshot(
     double? PrimaryUsed,

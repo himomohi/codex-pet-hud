@@ -75,6 +75,23 @@ public sealed class CodexPetStateReader
             {
                 displayId = display.ValueKind == JsonValueKind.String ? display.GetString() : display.GetRawText();
             }
+            double? displayX = null;
+            double? displayY = null;
+            double? displayWidth = null;
+            double? displayHeight = null;
+            if (bounds.TryGetProperty("displayBounds", out var displayBounds) &&
+                displayBounds.ValueKind == JsonValueKind.Object &&
+                TryNumber(displayBounds, "x", out var parsedDisplayX) &&
+                TryNumber(displayBounds, "y", out var parsedDisplayY) &&
+                TryNumber(displayBounds, "width", out var parsedDisplayWidth) &&
+                TryNumber(displayBounds, "height", out var parsedDisplayHeight) &&
+                parsedDisplayWidth > 0 && parsedDisplayHeight > 0)
+            {
+                displayX = parsedDisplayX;
+                displayY = parsedDisplayY;
+                displayWidth = parsedDisplayWidth;
+                displayHeight = parsedDisplayHeight;
+            }
             return UpdateCache(info, new PetWindowCandidate(
                 windowX,
                 windowY,
@@ -84,7 +101,11 @@ public sealed class CodexPetStateReader
                 mascotTop,
                 mascotWidth,
                 mascotHeight,
-                displayId));
+                displayId,
+                displayX,
+                displayY,
+                displayWidth,
+                displayHeight));
         }
         catch (IOException) { ClearCache(); return null; }
         catch (UnauthorizedAccessException) { ClearCache(); return null; }
