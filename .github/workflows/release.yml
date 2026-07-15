@@ -55,7 +55,7 @@ jobs:
           path: dist
           merge-multiple: true
       - run: ./scripts/release/verify-assets.sh dist
-      - name: Publish unsigned preview release
+      - name: Publish latest unsigned preview release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -75,6 +75,7 @@ jobs:
           } > release-notes.md
           gh release create "$GITHUB_REF_NAME" dist/* \
             --verify-tag \
-            --prerelease \
+            --latest \
             --title "$GITHUB_REF_NAME · Codex Pet HUD · Unsigned Preview" \
             --notes-file release-notes.md
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" = "$GITHUB_REF_NAME"
