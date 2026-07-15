@@ -2,24 +2,43 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Codex 포션 상세" Width="340" Height="285" ResizeMode="NoResize"
-        WindowStyle="ToolWindow" ShowInTaskbar="False" Topmost="True" Background="#FAFAFA" Closing="Window_OnClosing">
+        WindowStyle="ToolWindow" ShowInTaskbar="False" Topmost="True" Background="#FAFAFA"
+        FontFamily="Segoe UI, Malgun Gothic" TextOptions.TextFormattingMode="Display"
+        Closing="Window_OnClosing">
   <Grid Margin="16">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
     <StackPanel>
-      <TextBlock Text="🧪 Codex 포션 상세" FontSize="17" FontWeight="Bold" />
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Text="🧪" FontSize="14" Margin="0,0,5,0" />
+        <TextBlock Text="Codex 포션 상세" FontSize="15" FontWeight="Bold" />
+      </StackPanel>
       <TextBlock Text="실제 Codex 펫의 두 사용 한도" Foreground="#71717A" FontSize="11" />
     </StackPanel>
     <Border Grid.Row="1" Margin="0,12,0,5" Padding="10" CornerRadius="9" BorderBrush="#E4E4E7" BorderThickness="1" Background="White">
-      <StackPanel><TextBlock Text="🔴 5시간 포션" FontWeight="SemiBold"/><TextBlock x:Name="PrimaryValue" FontSize="20" FontWeight="Bold"/><TextBlock x:Name="PrimaryReset" Foreground="#71717A" FontSize="11"/></StackPanel>
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="●" Foreground="#DC2626" FontSize="11" Margin="0,0,5,0" />
+          <TextBlock Text="5시간 포션" FontSize="12" FontWeight="SemiBold" />
+        </StackPanel>
+        <TextBlock x:Name="PrimaryValue" FontSize="18" FontWeight="Bold" />
+        <TextBlock x:Name="PrimaryReset" Foreground="#71717A" FontSize="10.5" />
+      </StackPanel>
     </Border>
     <Border Grid.Row="2" Margin="0,5,0,12" Padding="10" CornerRadius="9" BorderBrush="#E4E4E7" BorderThickness="1" Background="White">
-      <StackPanel><TextBlock Text="🔵 주간 포션" FontWeight="SemiBold"/><TextBlock x:Name="SecondaryValue" FontSize="20" FontWeight="Bold"/><TextBlock x:Name="SecondaryReset" Foreground="#71717A" FontSize="11"/></StackPanel>
+      <StackPanel>
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="●" Foreground="#2563EB" FontSize="11" Margin="0,0,5,0" />
+          <TextBlock Text="주간 포션" FontSize="12" FontWeight="SemiBold" />
+        </StackPanel>
+        <TextBlock x:Name="SecondaryValue" FontSize="18" FontWeight="Bold" />
+        <TextBlock x:Name="SecondaryReset" Foreground="#71717A" FontSize="10.5" />
+      </StackPanel>
     </Border>
     <DockPanel Grid.Row="3">
-      <TextBlock x:Name="SourceText" Foreground="#71717A" FontSize="11" VerticalAlignment="Center" />
-      <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="지금 갱신" Click="RefreshButton_OnClick" />
+      <TextBlock x:Name="SourceText" Foreground="#71717A" FontSize="10.5" VerticalAlignment="Center" />
+      <Button x:Name="RefreshButton" DockPanel.Dock="Right" Content="지금 갱신" FontSize="11" Padding="10,3" Click="RefreshButton_OnClick" />
     </DockPanel>
   </Grid>
 </Window>
