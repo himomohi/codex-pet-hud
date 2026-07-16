@@ -66,6 +66,7 @@ public partial class PotionWindow : Window
     public void ApplyScale(double scale)
     {
         var typeScale = Math.Clamp(scale, 0.75, 1.5);
+        var labelScale = Math.Clamp(scale, 0.9, 1.5);
         Width = 92 * scale;
         Height = 110 * scale;
         PercentBackdrop.Width = 34 * typeScale;
@@ -74,10 +75,10 @@ public partial class PotionWindow : Window
         PercentText.FontSize = 12 * typeScale;
         Canvas.SetLeft(PercentBackdrop, 46 * scale - PercentBackdrop.Width / 2);
         Canvas.SetTop(PercentBackdrop, 58 * scale - PercentBackdrop.Height / 2);
-        LabelContainer.Width = 34 * typeScale;
-        LabelContainer.Height = 12 * typeScale;
-        LabelContainer.CornerRadius = new CornerRadius(3 * typeScale);
-        LabelText.FontSize = 8 * typeScale;
+        LabelContainer.Width = 34 * labelScale;
+        LabelContainer.Height = 14 * labelScale;
+        LabelContainer.CornerRadius = new CornerRadius(3 * labelScale);
+        LabelText.FontSize = 10 * labelScale;
         Canvas.SetLeft(LabelContainer, 46 * scale - LabelContainer.Width / 2);
         Canvas.SetTop(LabelContainer, 93 * scale - LabelContainer.Height / 2);
     }

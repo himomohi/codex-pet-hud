@@ -96,10 +96,10 @@
                      Typography.NumeralAlignment="Tabular"
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
-        <Border x:Name="LabelContainer" Canvas.Left="29" Canvas.Top="87" Width="34" Height="12"
+        <Border x:Name="LabelContainer" Canvas.Left="29" Canvas.Top="86" Width="34" Height="14"
                 Background="#D1000000" BorderBrush="#B37D6E57" BorderThickness="0.8" CornerRadius="3">
           <TextBlock x:Name="LabelText" Text="5H" Foreground="White" FontFamily="Consolas, Segoe UI"
-                     FontSize="8" FontWeight="Bold" Typography.NumeralAlignment="Tabular"
+                     FontSize="10" FontWeight="Bold" Typography.NumeralAlignment="Tabular"
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Border>
       </Canvas>

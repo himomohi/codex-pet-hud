@@ -9,6 +9,17 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
 
+## [0.1.6] - 2026-07-16
+
+### Changed
+
+- Refocus the project website introduction on checking five-hour and weekly Codex usage at a glance
+- Keep the latest website changelog summary aligned with the current release
+
+### Fixed
+
+- Increase the Windows potion `5H` and `WK` label size and preserve readable typography at reduced HUD scales
+
 ## [0.1.5] - 2026-07-15
 
 ### Changed
@@ -69,7 +80,8 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.2...v0.1.3
