@@ -4,14 +4,16 @@ Codex Pet HUD publishes unsigned preview builds from version tags. The tag is th
 
 ## Release flow
 
-1. Update `CHANGELOG.md` and move changes from `Unreleased` into a dated version.
-2. Verify macOS locally with `./scripts/release/build-macos.sh vX.Y.Z`.
+1. Update `CHANGELOG.md`, move changes from `Unreleased` into a dated version, and advance the `[Unreleased]` comparison link to that tag.
+2. Run `./scripts/release/verify-release.sh vX.Y.Z`, then verify macOS locally with `./scripts/release/build-macos.sh vX.Y.Z`.
 3. Commit and push `main`.
 4. Create and push an annotated `vX.Y.Z` tag.
-5. The Release workflow builds macOS universal, Windows x64, and Windows ARM64 archives in clean GitHub runners.
+5. The Release workflow first rejects tag, changelog, generated-note, comparison-link, or website-contract drift, then builds macOS universal, Windows x64, and Windows ARM64 archives in clean GitHub runners.
 6. The publish job rejects forbidden files, writes `SHA256SUMS.txt`, verifies the checksums, and builds categorized release notes from that version's `CHANGELOG.md` section.
 7. The workflow creates the latest GitHub Release marked **Unsigned Preview** and verifies that GitHub exposes the tag as the latest release.
 8. Confirm every asset and the categorized changes from the public release page before announcing the release.
+
+The project website reads GitHub's latest non-draft, non-prerelease Release directly. Publishing a release updates its version, publication date, downloads, and categorized changelog without another website edit or deployment.
 
 ## Expected assets
 
