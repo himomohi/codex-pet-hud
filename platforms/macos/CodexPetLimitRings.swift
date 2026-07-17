@@ -16,6 +16,7 @@ private let POTION_ORB_MIN_DIAMETER: CGFloat = 60
 private let POTION_ORB_MAX_DIAMETER: CGFloat = 78
 private let POTION_ORB_GAP: CGFloat = 10
 private let POTION_FRAME_INSET: CGFloat = 8
+private let DEFAULT_CODEX_PET_SIZE = NSSize(width: 112, height: 121)
 
 private struct OverlaySettings: Codable, Equatable {
     var scale: Double
@@ -140,6 +141,136 @@ private struct Anchor: Equatable {
     let displayWidth: CGFloat?
     let displayHeight: CGFloat?
     let displayID: Int?
+}
+
+struct PersistedPetAnchor: Equatable {
+    let x: CGFloat
+    let y: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+}
+
+enum PersistedPetGeometry: Equatable {
+    case legacy(windowWidth: CGFloat, windowHeight: CGFloat, anchor: PersistedPetAnchor)
+    case direct(PersistedPetAnchor)
+}
+
+func persistedPetGeometry(from bounds: [String: Any]) -> PersistedPetGeometry? {
+    if let windowWidth = bounds["width"] as? NSNumber,
+       let windowHeight = bounds["height"] as? NSNumber,
+       windowWidth.doubleValue > 0,
+       windowHeight.doubleValue > 0 {
+        let boundsX = (bounds["x"] as? NSNumber).map { CGFloat(truncating: $0) }
+        let boundsY = (bounds["y"] as? NSNumber).map { CGFloat(truncating: $0) }
+        let mascot = bounds["mascot"] as? [String: Any]
+        let anchor = bounds["anchor"] as? [String: Any]
+        let anchorX = anchor?["x"] as? NSNumber
+        let anchorY = anchor?["y"] as? NSNumber
+        let anchorWidth = (anchor?["width"] as? NSNumber) ?? (mascot?["width"] as? NSNumber)
+        let anchorHeight = (anchor?["height"] as? NSNumber) ?? (mascot?["height"] as? NSNumber)
+        let offsetX = (mascot?["left"] as? NSNumber).map { CGFloat(truncating: $0) }
+            ?? anchorX.flatMap { value in boundsX.map { CGFloat(truncating: value) - $0 } }
+        let offsetY = (mascot?["top"] as? NSNumber).map { CGFloat(truncating: $0) }
+            ?? anchorY.flatMap { value in boundsY.map { CGFloat(truncating: value) - $0 } }
+        if let anchorWidth, let anchorHeight, let offsetX, let offsetY {
+            return .legacy(
+                windowWidth: CGFloat(truncating: windowWidth),
+                windowHeight: CGFloat(truncating: windowHeight),
+                anchor: PersistedPetAnchor(
+                    x: offsetX,
+                    y: offsetY,
+                    width: CGFloat(truncating: anchorWidth),
+                    height: CGFloat(truncating: anchorHeight)
+                )
+            )
+        }
+    }
+    return directPersistedPetAnchor(from: bounds).map(PersistedPetGeometry.direct)
+}
+
+func directPersistedPetAnchor(from bounds: [String: Any]) -> PersistedPetAnchor? {
+    guard let x = bounds["x"] as? NSNumber,
+          let y = bounds["y"] as? NSNumber else {
+        return nil
+    }
+    let size = rememberedPetSize(in: bounds) ?? DEFAULT_CODEX_PET_SIZE
+    return PersistedPetAnchor(
+        x: CGFloat(truncating: x),
+        y: CGFloat(truncating: y),
+        width: size.width,
+        height: size.height
+    )
+}
+
+func persistedDisplayID(from bounds: [String: Any]) -> Int? {
+    if let value = bounds["displayId"] as? NSNumber {
+        return value.intValue
+    }
+    if let value = bounds["displayId"] as? String {
+        return Int(value)
+    }
+    return nil
+}
+
+private func rememberedPetSize(in bounds: [String: Any]) -> NSSize? {
+    var candidates: [[String: Any]] = []
+    let displayKey = persistedDisplayID(from: bounds).map(String.init)
+    if let displayKey,
+       let byDisplayID = bounds["byDisplayId"] as? [String: Any],
+       let current = byDisplayID[displayKey] as? [String: Any] {
+        candidates.append(current)
+    }
+    if let displayBounds = bounds["displayBounds"] as? [String: Any],
+       let width = displayBounds["width"] as? NSNumber,
+       let height = displayBounds["height"] as? NSNumber,
+       let byResolution = bounds["byResolution"] as? [String: Any],
+       let current = byResolution["\(width.intValue)x\(height.intValue)"] as? [String: Any] {
+        candidates.append(current)
+    }
+    for candidate in candidates {
+        if let anchor = candidate["anchor"] as? [String: Any],
+           let size = rectSize(anchor, widthKey: "width", heightKey: "height") {
+            return size
+        }
+        if let mascot = candidate["mascot"] as? [String: Any],
+           let size = rectSize(mascot, widthKey: "width", heightKey: "height") {
+            return size
+        }
+    }
+    return nil
+}
+
+private func rectSize(_ rect: [String: Any], widthKey: String, heightKey: String) -> NSSize? {
+    guard let width = rect[widthKey] as? NSNumber,
+          let height = rect[heightKey] as? NSNumber,
+          width.doubleValue > 0,
+          height.doubleValue > 0 else {
+        return nil
+    }
+    return NSSize(width: CGFloat(truncating: width), height: CGFloat(truncating: height))
+}
+
+func isVisibleIntegratedPetWindow(_ info: [String: Any], containing anchor: PersistedPetAnchor) -> Bool {
+    let owner = (info[kCGWindowOwnerName as String] as? String)?.lowercased() ?? ""
+    guard owner == "chatgpt" || owner == "codex" else { return false }
+    guard (info[kCGWindowLayer as String] as? NSNumber)?.intValue ?? 0 > 0 else { return false }
+    guard (info[kCGWindowAlpha as String] as? NSNumber)?.doubleValue ?? 0 > 0 else { return false }
+    guard (info[kCGWindowIsOnscreen as String] as? NSNumber)?.boolValue == true else { return false }
+    guard let frame = info[kCGWindowBounds as String] as? [String: Any],
+          let x = frame["X"] as? NSNumber,
+          let y = frame["Y"] as? NSNumber,
+          let width = frame["Width"] as? NSNumber,
+          let height = frame["Height"] as? NSNumber else {
+        return false
+    }
+    let windowFrame = CGRect(
+        x: CGFloat(truncating: x),
+        y: CGFloat(truncating: y),
+        width: CGFloat(truncating: width),
+        height: CGFloat(truncating: height)
+    )
+    let anchorFrame = CGRect(x: anchor.x, y: anchor.y, width: anchor.width, height: anchor.height)
+    return abs(windowFrame.height - anchor.height) <= 24 && windowFrame.contains(anchorFrame)
 }
 
 private struct PetWindowFrame {
@@ -1521,7 +1652,8 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
 
     private func statusLine() -> String {
         if anchorMissing {
-            return "상태: Codex pet 꺼짐"
+            let petOpen = (cachedStateRoot?["electron-avatar-overlay-open"] as? NSNumber)?.boolValue == true
+            return petOpen ? "상태: Codex pet 위치 확인 중" : "상태: Codex pet 꺼짐"
         }
         guard let usage = lastMenuUsage else {
             return "상태: 데이터 확인 중"
@@ -2026,14 +2158,7 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
             petWindowID = nil
             return nil
         }
-        guard
-            let bounds = root["electron-avatar-overlay-bounds"] as? [String: Any],
-            let anchor = bounds["anchor"] as? [String: Any],
-            let x = anchor["x"] as? NSNumber,
-            let y = anchor["y"] as? NSNumber,
-            let width = anchor["width"] as? NSNumber,
-            let height = anchor["height"] as? NSNumber
-        else {
+        guard let bounds = root["electron-avatar-overlay-bounds"] as? [String: Any] else {
             return nil
         }
         guard let open = root["electron-avatar-overlay-open"] as? NSNumber,
@@ -2042,39 +2167,44 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
             return nil
         }
 
-        guard width.doubleValue > 0,
-              height.doubleValue > 0,
-              let petWindow = visiblePetWindow(matching: bounds) else {
-            return nil
-        }
-
-        let boundsX = (bounds["x"] as? NSNumber).map { CGFloat(truncating: $0) }
-        let boundsY = (bounds["y"] as? NSNumber).map { CGFloat(truncating: $0) }
-        let mascot = bounds["mascot"] as? [String: Any]
-        let anchorOffsetX = (mascot?["left"] as? NSNumber).map { CGFloat(truncating: $0) }
-            ?? boundsX.map { CGFloat(truncating: x) - $0 }
-        let anchorOffsetY = (mascot?["top"] as? NSNumber).map { CGFloat(truncating: $0) }
-            ?? boundsY.map { CGFloat(truncating: y) - $0 }
-        guard let anchorOffsetX, let anchorOffsetY else { return nil }
-
         let displayBounds = bounds["displayBounds"] as? [String: Any]
         let displayX = displayBounds?["x"] as? NSNumber
         let displayY = displayBounds?["y"] as? NSNumber
         let displayWidth = displayBounds?["width"] as? NSNumber
         let displayHeight = displayBounds?["height"] as? NSNumber
-        let displayID = bounds["displayId"] as? NSNumber
+        let displayID = persistedDisplayID(from: bounds)
 
-        return Anchor(
-            x: petWindow.x + anchorOffsetX,
-            y: petWindow.y + anchorOffsetY,
-            width: CGFloat(truncating: width),
-            height: CGFloat(truncating: height),
-            displayX: displayX.map { CGFloat(truncating: $0) },
-            displayY: displayY.map { CGFloat(truncating: $0) },
-            displayWidth: displayWidth.map { CGFloat(truncating: $0) },
-            displayHeight: displayHeight.map { CGFloat(truncating: $0) },
-            displayID: displayID?.intValue
-        )
+        guard let geometry = persistedPetGeometry(from: bounds) else { return nil }
+        switch geometry {
+        case .legacy(_, _, let persisted):
+            guard let petWindow = visiblePetWindow(matching: bounds) else { return nil }
+            return Anchor(
+                x: petWindow.x + persisted.x,
+                y: petWindow.y + persisted.y,
+                width: persisted.width,
+                height: persisted.height,
+                displayX: displayX.map { CGFloat(truncating: $0) },
+                displayY: displayY.map { CGFloat(truncating: $0) },
+                displayWidth: displayWidth.map { CGFloat(truncating: $0) },
+                displayHeight: displayHeight.map { CGFloat(truncating: $0) },
+                displayID: displayID
+            )
+        case .direct(let persisted):
+            let current = Anchor(
+                x: persisted.x,
+                y: persisted.y,
+                width: persisted.width,
+                height: persisted.height,
+                displayX: displayX.map { CGFloat(truncating: $0) },
+                displayY: displayY.map { CGFloat(truncating: $0) },
+                displayWidth: displayWidth.map { CGFloat(truncating: $0) },
+                displayHeight: displayHeight.map { CGFloat(truncating: $0) },
+                displayID: displayID
+            )
+            guard hasVisibleIntegratedPetWindow(containing: persisted) else { return nil }
+            petWindowID = nil
+            return current
+        }
     }
 
     private func readStateRoot() -> [String: Any]? {
@@ -2156,6 +2286,16 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         }
         petWindowID = match.0
         return match.1
+    }
+
+    private func hasVisibleIntegratedPetWindow(containing anchor: PersistedPetAnchor) -> Bool {
+        guard let windowList = CGWindowListCopyWindowInfo(
+            [.optionOnScreenOnly, .excludeDesktopElements],
+            kCGNullWindowID
+        ) as? [[String: Any]] else {
+            return false
+        }
+        return windowList.contains { isVisibleIntegratedPetWindow($0, containing: anchor) }
     }
 
     private func readUsage() -> LimitUsage {
@@ -2675,7 +2815,9 @@ private final class SettingsWindowController: NSObject, WKScriptMessageHandler, 
 
 // MARK: - Entry Point
 
+#if !UNIT_TESTING
 let app = NSApplication.shared
 private let delegate = RingsApp()
 app.delegate = delegate
 app.run()
+#endif

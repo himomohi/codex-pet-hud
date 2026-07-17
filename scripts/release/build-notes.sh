@@ -35,6 +35,12 @@ grep -q '^### ' "$CHANGES" || { echo "No categorized changes for $TAG" >&2; exit
   cat <<'NOTES'
 Download the archive for your platform and verify it with `SHA256SUMS.txt`.
 
+## Links
+
+- [Repository](https://github.com/himomohi/codex-pet-hud)
+- [Version release](https://github.com/himomohi/codex-pet-hud/releases/tag/RELEASE_TAG)
+- [Latest downloads](https://github.com/himomohi/codex-pet-hud/releases/latest)
+
 > [!WARNING]
 > These preview builds are not Developer ID notarized or Authenticode signed. macOS Gatekeeper or Windows SmartScreen may display an unknown-developer warning. Download only from this official repository.
 
@@ -42,4 +48,4 @@ The live usage integration reads the existing Codex access token in memory and c
 
 See the [full changelog](https://github.com/himomohi/codex-pet-hud/blob/main/CHANGELOG.md) and [project website](https://himomohi.github.io/codex-pet-hud/).
 NOTES
-}
+} | sed "s/RELEASE_TAG/$TAG/g"

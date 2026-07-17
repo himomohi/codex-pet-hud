@@ -31,7 +31,7 @@ The platform applications do not share UI source code. This keeps AppKit/launchd
 Both native apps must show the HUD only when:
 
 1. `electron-avatar-overlay-open` exists and is exactly `true`;
-2. `electron-avatar-overlay-bounds` contains a positive window rectangle and `mascot` or `anchor` rectangle;
+2. `electron-avatar-overlay-bounds` contains the legacy window plus `mascot`/`anchor` rectangles; on macOS, the integrated app's direct `x`/`y` anchor is also accepted;
 3. the matching Codex pet window is currently visible, not minimized, and not DWM-cloaked.
 
 When the invariant becomes false, potion windows, detail UI, transient alerts, and usage refresh stop immediately. Tray access remains available for settings and diagnostics.

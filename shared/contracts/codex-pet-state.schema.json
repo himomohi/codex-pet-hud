@@ -6,9 +6,13 @@
   "required": ["electron-avatar-overlay-open", "electron-avatar-overlay-bounds"],
   "properties": {
     "electron-avatar-overlay-open": { "type": "boolean" },
-    "electron-avatar-overlay-bounds": {
+    "electron-avatar-overlay-bounds": { "$ref": "#/$defs/persistedBounds" }
+  },
+  "$defs": {
+    "persistedBounds": {
       "type": "object",
-      "required": ["x", "y", "width", "height"],
+      "description": "Producer state accepted by macOS. Windows currently requires the legacy width, height, and mascot or anchor fields.",
+      "required": ["x", "y"],
       "properties": {
         "x": { "type": "number" },
         "y": { "type": "number" },
@@ -17,13 +21,19 @@
         "displayId": { "type": ["integer", "string"] },
         "displayBounds": { "$ref": "#/$defs/rect" },
         "anchor": { "$ref": "#/$defs/rect" },
-        "mascot": { "$ref": "#/$defs/offsetRect" }
+        "mascot": { "$ref": "#/$defs/offsetRect" },
+        "placement": { "enum": ["top-start", "top-end", "bottom-start", "bottom-end"] },
+        "byDisplayId": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/persistedBounds" }
+        },
+        "byResolution": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/persistedBounds" }
+        }
       },
-      "anyOf": [{ "required": ["anchor"] }, { "required": ["mascot"] }],
       "additionalProperties": true
-    }
-  },
-  "$defs": {
+    },
     "rect": {
       "type": "object",
       "required": ["x", "y", "width", "height"],
