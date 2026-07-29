@@ -8,6 +8,7 @@ public sealed class OverlaySettings
     public double HorizontalOffset { get; set; }
     public double VerticalOffset { get; set; }
     public double PotionGap { get; set; } = 10;
+    public string Alignment { get; set; } = "split";
     public bool UsageAlertsEnabled { get; set; } = true;
     public bool NativeNotificationsEnabled { get; set; }
     public int[] AlertThresholds { get; set; } = [20, 10, 5];
@@ -25,6 +26,14 @@ public sealed class OverlaySettings
         HorizontalOffset = Math.Clamp(HorizontalOffset, -400, 400);
         VerticalOffset = Math.Clamp(VerticalOffset, -300, 300);
         PotionGap = Math.Clamp(PotionGap, 0, 160);
+        Alignment = Alignment?.Trim().ToLowerInvariant() switch
+        {
+            "left" => "left",
+            "right" => "right",
+            "above" => "above",
+            "below" => "below",
+            _ => "split"
+        };
         AlertThresholds = (AlertThresholds ?? []).Where(value => value is 20 or 10 or 5).Distinct().OrderByDescending(value => value).ToArray();
         if (LastCleanupAt is { } timestamp)
         {
@@ -65,7 +74,8 @@ public sealed record PetWindowCandidate(
     double? DisplayX,
     double? DisplayY,
     double? DisplayWidth,
-    double? DisplayHeight);
+    double? DisplayHeight,
+    bool DirectCoordinates);
 
 public sealed record UsageSnapshot(
     double? PrimaryUsed,

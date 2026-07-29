@@ -8,6 +8,7 @@ if ($Tag -notmatch '^v\d+\.\d+\.\d+$') { throw "Invalid release tag: $Tag" }
 
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $Project = Join-Path $Root "platforms\windows\CodexPetLimitRings.Windows\CodexPetLimitRings.Windows.csproj"
+$LayoutTests = Join-Path $Root "platforms\windows\tests\LayoutTests\LayoutTests.csproj"
 $Work = Join-Path $Root "artifacts\release\windows-$Runtime"
 $App = Join-Path $Work "app"
 $Dist = Join-Path $Root "dist"
@@ -16,6 +17,9 @@ $Version = $Tag.TrimStart('v')
 Remove-Item $Work -Recurse -Force -ErrorAction SilentlyContinue
 New-Item $App -ItemType Directory -Force | Out-Null
 New-Item $Dist -ItemType Directory -Force | Out-Null
+
+dotnet run --project $LayoutTests -c Release
+if ($LASTEXITCODE -ne 0) { throw "Windows HUD layout tests failed." }
 
 dotnet publish $Project `
   -c Release `

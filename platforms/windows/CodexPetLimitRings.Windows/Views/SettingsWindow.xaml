@@ -13,16 +13,35 @@
       <Border Padding="16" Margin="0,0,0,12" CornerRadius="12" Background="White" BorderBrush="#E4E4E7" BorderThickness="1">
         <StackPanel>
           <TextBlock Text="배치" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="실제 Codex 펫을 기준으로 위치를 맞춰요." Foreground="#71717A" Margin="0,2,0,12"/>
-          <TextBlock Text="가로 위치"/><Slider x:Name="HorizontalOffset" Minimum="-400" Maximum="400" TickFrequency="1" ValueChanged="Control_OnChanged"/>
-          <TextBlock Text="세로 위치" Margin="0,10,0,0"/><Slider x:Name="VerticalOffset" Minimum="-300" Maximum="300" TickFrequency="1" ValueChanged="Control_OnChanged"/>
+          <TextBlock Text="펫 기준 정렬"/>
+          <ComboBox x:Name="Alignment" Margin="0,5,0,12" SelectionChanged="Control_OnChanged">
+            <ComboBoxItem Tag="split" Content="양옆 자동"/>
+            <ComboBoxItem Tag="left" Content="펫 왼쪽"/>
+            <ComboBoxItem Tag="right" Content="펫 오른쪽"/>
+            <ComboBoxItem Tag="above" Content="펫 위쪽"/>
+            <ComboBoxItem Tag="below" Content="펫 아래쪽"/>
+          </ComboBox>
+          <DockPanel><TextBlock Text="가로 위치"/><TextBlock x:Name="HorizontalOffsetValue" DockPanel.Dock="Right" Foreground="#71717A"/></DockPanel>
+          <Slider x:Name="HorizontalOffset" Minimum="-400" Maximum="400" TickFrequency="1" ValueChanged="Control_OnChanged"/>
+          <DockPanel Margin="0,10,0,0"><TextBlock Text="세로 위치"/><TextBlock x:Name="VerticalOffsetValue" DockPanel.Dock="Right" Foreground="#71717A"/></DockPanel>
+          <Slider x:Name="VerticalOffset" Minimum="-300" Maximum="300" TickFrequency="1" ValueChanged="Control_OnChanged"/>
+          <UniformGrid Columns="5" Margin="0,12,0,0">
+            <Button Content="←" Tag="left" Click="NudgeButton_OnClick" Margin="2" ToolTip="왼쪽 5px"/>
+            <Button Content="↑" Tag="up" Click="NudgeButton_OnClick" Margin="2" ToolTip="위 5px"/>
+            <Button Content="중앙" Tag="center" Click="NudgeButton_OnClick" Margin="2"/>
+            <Button Content="↓" Tag="down" Click="NudgeButton_OnClick" Margin="2" ToolTip="아래 5px"/>
+            <Button Content="→" Tag="right" Click="NudgeButton_OnClick" Margin="2" ToolTip="오른쪽 5px"/>
+          </UniformGrid>
         </StackPanel>
       </Border>
 
       <Border Padding="16" Margin="0,0,0,12" CornerRadius="12" Background="White" BorderBrush="#E4E4E7" BorderThickness="1">
         <StackPanel>
           <TextBlock Text="크기와 간격" FontSize="15" FontWeight="SemiBold"/><TextBlock Text="화면과 펫 크기에 맞춰 조절해요." Foreground="#71717A" Margin="0,2,0,12"/>
-          <TextBlock Text="전체 크기"/><Slider x:Name="Scale" Minimum="0.5" Maximum="1.8" TickFrequency="0.05" ValueChanged="Control_OnChanged"/>
-          <TextBlock Text="포션 간격" Margin="0,10,0,0"/><Slider x:Name="PotionGap" Minimum="0" Maximum="160" TickFrequency="1" ValueChanged="Control_OnChanged"/>
+          <DockPanel><TextBlock Text="전체 크기"/><TextBlock x:Name="ScaleValue" DockPanel.Dock="Right" Foreground="#71717A"/></DockPanel>
+          <Slider x:Name="Scale" Minimum="0.5" Maximum="1.8" TickFrequency="0.05" ValueChanged="Control_OnChanged"/>
+          <DockPanel Margin="0,10,0,0"><TextBlock Text="포션 간격"/><TextBlock x:Name="PotionGapValue" DockPanel.Dock="Right" Foreground="#71717A"/></DockPanel>
+          <Slider x:Name="PotionGap" Minimum="0" Maximum="160" TickFrequency="1" ValueChanged="Control_OnChanged"/>
         </StackPanel>
       </Border>
 

@@ -9,6 +9,7 @@
     "horizontalOffset": { "type": "number", "minimum": -400, "maximum": 400, "default": 0 },
     "verticalOffset": { "type": "number", "minimum": -300, "maximum": 300, "default": 0 },
     "potionGap": { "type": "number", "minimum": 0, "maximum": 160, "default": 10 },
+    "alignment": { "type": "string", "enum": ["split", "left", "right", "above", "below"], "default": "split" },
     "usageAlertsEnabled": { "type": "boolean", "default": true },
     "nativeNotificationsEnabled": { "type": "boolean", "default": false },
     "alertThresholds": {

@@ -11,6 +11,7 @@ public partial class PotionWindow : Window
 {
     private const double GlassSize = 67;
     private readonly string _accessibleLabel;
+    private double _appliedScale = double.NaN;
     public event Action? PotionClicked;
 
     public PotionWindow(string label, System.Windows.Media.Color dark, System.Windows.Media.Color mid, System.Windows.Media.Color bright, System.Windows.Media.Color surface)
@@ -65,6 +66,8 @@ public partial class PotionWindow : Window
 
     public void ApplyScale(double scale)
     {
+        if (double.IsFinite(_appliedScale) && Math.Abs(_appliedScale - scale) < 0.0001) return;
+        _appliedScale = scale;
         var typeScale = Math.Clamp(scale, 0.75, 1.5);
         var labelScale = Math.Clamp(scale, 0.9, 1.5);
         Width = 92 * scale;

@@ -21,7 +21,7 @@ public partial class App : System.Windows.Application
         try
         {
             _controller = new MainController();
-            _controller.Start();
+            _controller.Start(e.Args.Any(argument => string.Equals(argument, "--settings", StringComparison.OrdinalIgnoreCase)));
             Services.AppLog.Write("Codex Pet HUD started.");
         }
         catch (Exception error)

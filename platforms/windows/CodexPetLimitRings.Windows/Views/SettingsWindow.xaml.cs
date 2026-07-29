@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 
 namespace CodexPetLimitRings.Windows.Views;
 
@@ -20,6 +21,10 @@ public partial class SettingsWindow : Window
         HorizontalOffset.Value = settings.HorizontalOffset;
         VerticalOffset.Value = settings.VerticalOffset;
         PotionGap.Value = settings.PotionGap;
+        Alignment.SelectedItem = Alignment.Items.Cast<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(item.Tag?.ToString(), settings.Alignment, StringComparison.OrdinalIgnoreCase))
+            ?? Alignment.Items[0];
+        UpdateValueLabels();
         UsageAlerts.IsChecked = settings.UsageAlertsEnabled;
         NativeNotifications.IsChecked = settings.NativeNotificationsEnabled;
         Alert20.IsChecked = settings.AlertThresholds.Contains(20);
@@ -39,6 +44,8 @@ public partial class SettingsWindow : Window
         _settings.HorizontalOffset = HorizontalOffset.Value;
         _settings.VerticalOffset = VerticalOffset.Value;
         _settings.PotionGap = PotionGap.Value;
+        _settings.Alignment = (Alignment.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "split";
+        UpdateValueLabels();
         _settings.UsageAlertsEnabled = UsageAlerts.IsChecked == true;
         _settings.NativeNotificationsEnabled = NativeNotifications.IsChecked == true;
         _settings.AlertThresholds = new[] { (20, Alert20), (10, Alert10), (5, Alert5) }
@@ -51,6 +58,27 @@ public partial class SettingsWindow : Window
     {
         Apply(new OverlaySettings());
         SettingsChanged?.Invoke(_settings);
+    }
+
+    private void NudgeButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not System.Windows.Controls.Button button) return;
+        switch (button.Tag?.ToString())
+        {
+            case "left": HorizontalOffset.Value = Math.Max(HorizontalOffset.Minimum, HorizontalOffset.Value - 5); break;
+            case "right": HorizontalOffset.Value = Math.Min(HorizontalOffset.Maximum, HorizontalOffset.Value + 5); break;
+            case "up": VerticalOffset.Value = Math.Max(VerticalOffset.Minimum, VerticalOffset.Value - 5); break;
+            case "down": VerticalOffset.Value = Math.Min(VerticalOffset.Maximum, VerticalOffset.Value + 5); break;
+            case "center": HorizontalOffset.Value = 0; VerticalOffset.Value = 0; break;
+        }
+    }
+
+    private void UpdateValueLabels()
+    {
+        ScaleValue.Text = $"{Scale.Value * 100:0}%";
+        HorizontalOffsetValue.Text = $"{HorizontalOffset.Value:+0;-0;0}px";
+        VerticalOffsetValue.Text = $"{VerticalOffset.Value:+0;-0;0}px";
+        PotionGapValue.Text = $"{PotionGap.Value:0}px";
     }
 
     private void CleanupButton_OnClick(object sender, RoutedEventArgs e) => CleanupRequested?.Invoke();

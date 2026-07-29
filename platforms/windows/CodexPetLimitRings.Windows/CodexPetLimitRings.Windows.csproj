@@ -10,5 +10,6 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>CodexPetLimitRings</AssemblyName>
     <RootNamespace>CodexPetLimitRings.Windows</RootNamespace>
+    <ApplicationIcon>..\..\..\assets\windows\tray-icon-emoji.ico</ApplicationIcon>
   </PropertyGroup>
 </Project>

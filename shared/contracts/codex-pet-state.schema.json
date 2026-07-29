@@ -11,7 +11,7 @@
   "$defs": {
     "persistedBounds": {
       "type": "object",
-      "description": "Producer state accepted by macOS. Windows currently requires the legacy width, height, and mascot or anchor fields.",
+      "description": "Producer state accepted by macOS and Windows, including legacy window rectangles and integrated-app direct pet coordinates.",
       "required": ["x", "y"],
       "properties": {
         "x": { "type": "number" },

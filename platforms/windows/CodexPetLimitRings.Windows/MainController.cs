@@ -15,12 +15,13 @@ public sealed class MainController : IDisposable
     private readonly UsageService _usageService = new();
     private readonly CacheMaintenanceService _cacheService;
     private readonly ThresholdAlertService _alertService;
-    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly PotionWindow _primaryPotion = new("5H", System.Windows.Media.Color.FromRgb(56, 4, 6), System.Windows.Media.Color.FromRgb(184, 9, 14), System.Windows.Media.Color.FromRgb(255, 61, 20), System.Windows.Media.Color.FromRgb(255, 107, 31));
     private readonly PotionWindow _secondaryPotion = new("WK", System.Windows.Media.Color.FromRgb(6, 18, 61), System.Windows.Media.Color.FromRgb(10, 82, 194), System.Windows.Media.Color.FromRgb(20, 199, 235), System.Windows.Media.Color.FromRgb(46, 224, 255));
     private readonly UsageDetailsWindow _details = new();
     private readonly SettingsWindow _settingsWindow = new();
     private readonly Forms.NotifyIcon _tray = new();
+    private Icon? _trayIcon;
     private OverlaySettings _settings;
     private UsageSnapshot _usage = UsageSnapshot.Empty;
     private PetAnchor? _anchor;
@@ -38,7 +39,7 @@ public sealed class MainController : IDisposable
         _alertService = new ThresholdAlertService(_store);
     }
 
-    public void Start()
+    public void Start(bool showSettings = false)
     {
         ConfigureTray();
         _primaryPotion.PotionClicked += () => ShowDetails(_primaryPotion);
@@ -50,6 +51,7 @@ public sealed class MainController : IDisposable
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
         Tick();
+        if (showSettings) System.Windows.Application.Current.Dispatcher.BeginInvoke(ShowSettings);
     }
 
     private void Tick()
@@ -58,7 +60,7 @@ public sealed class MainController : IDisposable
         {
             RunScheduledCleanupIfNeeded();
             var candidate = _stateReader.ReadVisibleCandidate();
-            var anchor = candidate is null ? null : NativeMethods.FindVisiblePetAnchor(candidate);
+            var anchor = NativeMethods.FindVisiblePetAnchor(candidate);
             if (anchor is null)
             {
                 HideHud();
@@ -100,38 +102,13 @@ public sealed class MainController : IDisposable
 
     private void PlacePotions(PetAnchor anchor)
     {
-        var baseDiameter = Math.Clamp(Math.Max(anchor.Width, anchor.Height) * 0.62, 60, 78);
-        var baseScale = baseDiameter / 78;
-        var minimumScale = 0.5 * baseScale;
-        var scale = Math.Max(minimumScale, _settings.Scale * baseScale);
-        var availableSide = Math.Max(0, Math.Min(anchor.X - anchor.WorkX, anchor.WorkRight - anchor.Right));
-        var gap = _settings.PotionGap * _settings.Scale;
-        var potionWidth = 92 * scale;
-        if (potionWidth + gap > availableSide)
-        {
-            gap = Math.Max(0, availableSide - potionWidth);
-            if (potionWidth > availableSide && availableSide > 0)
-            {
-                scale = Math.Max(minimumScale, Math.Min(scale, availableSide / 92));
-                potionWidth = 92 * scale;
-                gap = Math.Max(0, availableSide - potionWidth);
-            }
-        }
-
-        _primaryPotion.ApplyScale(scale);
-        _secondaryPotion.ApplyScale(scale);
-        var potionHeight = 110 * scale;
-        var y = anchor.CenterY - potionHeight / 2 + _settings.VerticalOffset;
-        y = Math.Clamp(y, anchor.WorkY, Math.Max(anchor.WorkY, anchor.WorkBottom - potionHeight));
-        var leftX = anchor.X - gap - potionWidth + _settings.HorizontalOffset;
-        var rightX = anchor.Right + gap + _settings.HorizontalOffset;
-        leftX = Math.Clamp(leftX, anchor.WorkX, Math.Max(anchor.WorkX, anchor.WorkRight - potionWidth));
-        rightX = Math.Clamp(rightX, anchor.WorkX, Math.Max(anchor.WorkX, anchor.WorkRight - potionWidth));
-
-        _primaryPotion.Left = leftX;
-        _primaryPotion.Top = y;
-        _secondaryPotion.Left = rightX;
-        _secondaryPotion.Top = y;
+        var placement = HudLayout.Calculate(anchor, _settings);
+        _primaryPotion.ApplyScale(placement.Scale);
+        _secondaryPotion.ApplyScale(placement.Scale);
+        _primaryPotion.Left = placement.PrimaryX;
+        _primaryPotion.Top = placement.Y;
+        _secondaryPotion.Left = placement.SecondaryX;
+        _secondaryPotion.Top = placement.Y;
     }
 
     private async Task RefreshUsageAsync(bool force)
@@ -249,7 +226,10 @@ public sealed class MainController : IDisposable
 
     private void ConfigureTray()
     {
-        _tray.Icon = SystemIcons.Information;
+        _trayIcon = string.IsNullOrWhiteSpace(Environment.ProcessPath)
+            ? null
+            : Icon.ExtractAssociatedIcon(Environment.ProcessPath);
+        _tray.Icon = _trayIcon ?? SystemIcons.Application;
         _tray.Text = "Codex 포션 HUD";
         _tray.Visible = true;
         _tray.DoubleClick += (_, _) => ShowSettings();
@@ -280,6 +260,7 @@ public sealed class MainController : IDisposable
         _usageCancellation?.Cancel();
         _tray.Visible = false;
         _tray.Dispose();
+        _trayIcon?.Dispose();
         _usageService.Dispose();
         _primaryPotion.Close();
         _secondaryPotion.Close();

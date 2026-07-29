@@ -11,6 +11,10 @@ internal static class NativeMethods
     private const int WsExNoActivate = 0x08000000;
     private const int WsExToolWindow = 0x00000080;
     private const int DwmwaCloaked = 14;
+    // The integrated Codex state can lag a native window by a few frames while
+    // the pet is being resized or moved. Keep matching tolerant to that small
+    // coordinate drift, but never use an unrelated window far away from the pet.
+    private const double IntegratedCoordinateTolerance = 48;
 
     private delegate bool EnumWindowsProc(IntPtr handle, IntPtr parameter);
 
@@ -57,7 +61,15 @@ internal static class NativeMethods
         SetWindowLongPtr(handle, GwlExStyle, new IntPtr(style | WsExNoActivate | WsExToolWindow));
     }
 
-    public static PetAnchor? FindVisiblePetAnchor(PetWindowCandidate candidate)
+    public static PetAnchor? FindVisiblePetAnchor(PetWindowCandidate? candidate)
+    {
+        if (candidate is null) return null;
+        return candidate.DirectCoordinates
+            ? FindVisibleIntegratedPetAnchor(candidate)
+            : FindVisibleCodexPetAnchor(candidate);
+    }
+
+    private static PetAnchor? FindVisibleCodexPetAnchor(PetWindowCandidate candidate)
     {
         PetAnchor? found = null;
         long bestScore = long.MaxValue;
@@ -138,6 +150,80 @@ internal static class NativeMethods
         }, IntPtr.Zero);
 
         return ambiguous ? null : found;
+    }
+
+    private static PetAnchor? FindVisibleIntegratedPetAnchor(PetWindowCandidate candidate)
+    {
+        PetAnchor? found = null;
+        double smallestArea = double.MaxValue;
+        EnumWindows((handle, _) =>
+        {
+            if (!IsActuallyVisible(handle) || !IsCodexWindow(handle) || !GetWindowRect(handle, out var rect))
+            {
+                return true;
+            }
+
+            var dpiScale = GetDpiScale(handle);
+            var screen = System.Windows.Forms.Screen.FromHandle(handle);
+            var displayX = candidate.DisplayX ?? screen.Bounds.Left / dpiScale;
+            var displayY = candidate.DisplayY ?? screen.Bounds.Top / dpiScale;
+            var windowX = displayX + (rect.Left - screen.Bounds.Left) / dpiScale;
+            var windowY = displayY + (rect.Top - screen.Bounds.Top) / dpiScale;
+            var windowWidth = (rect.Right - rect.Left) / dpiScale;
+            var windowHeight = (rect.Bottom - rect.Top) / dpiScale;
+            var windowRight = windowX + windowWidth;
+            var windowBottom = windowY + windowHeight;
+            var pointDistance = DistanceOutside(candidate.WindowX, windowX, windowRight) +
+                                DistanceOutside(candidate.WindowY, windowY, windowBottom);
+            if (pointDistance > IntegratedCoordinateTolerance)
+            {
+                return true;
+            }
+
+            // When the pet is resized, the integrated state may expose its
+            // position before it exposes the new width/height. The old check
+            // rejected the containing window if the fallback rectangle was too
+            // large for the remaining space, which made the HUD disappear at
+            // the bottom/right edge. Clamp the estimate instead of rejecting a
+            // valid coordinate; exact legacy mascot bounds remain untouched.
+            var mascotWidth = Math.Min(Math.Max(1, candidate.MascotWidth), Math.Max(1, windowRight - candidate.WindowX));
+            var mascotHeight = Math.Min(Math.Max(1, candidate.MascotHeight), Math.Max(1, windowBottom - candidate.WindowY));
+
+            var area = windowWidth * windowHeight;
+            if (area >= smallestArea ||
+                windowWidth > Math.Max(600, mascotWidth * 6) ||
+                windowHeight > Math.Max(600, mascotHeight * 6))
+            {
+                return true;
+            }
+
+            var work = screen.WorkingArea;
+            var workX = displayX + (work.Left - screen.Bounds.Left) / dpiScale;
+            var workY = displayY + (work.Top - screen.Bounds.Top) / dpiScale;
+            var workRight = displayX + (work.Right - screen.Bounds.Left) / dpiScale;
+            var workBottom = displayY + (work.Bottom - screen.Bounds.Top) / dpiScale;
+            smallestArea = area;
+            found = new PetAnchor(
+                candidate.WindowX,
+                candidate.WindowY,
+                mascotWidth,
+                mascotHeight,
+                candidate.DisplayId,
+                workX,
+                workY,
+                workRight - workX,
+                workBottom - workY);
+            return true;
+        }, IntPtr.Zero);
+
+        return found;
+    }
+
+    private static double DistanceOutside(double value, double minimum, double maximum)
+    {
+        if (value < minimum) return minimum - value;
+        if (value > maximum) return value - maximum;
+        return 0;
     }
 
     private static double GetDpiScale(IntPtr handle)
