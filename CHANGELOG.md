@@ -4,6 +4,10 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 
 ## [Unreleased]
 
+### Changed
+
+- Make release completion a single guarded command that tags the pushed commit, waits for every platform job, and verifies the public latest release and checksum-bearing asset set
+
 ### Planned
 
 - Developer ID signing and notarization for macOS
