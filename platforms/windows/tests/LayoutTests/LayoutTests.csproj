@@ -8,5 +8,10 @@
   <ItemGroup>
     <Compile Include="..\..\CodexPetLimitRings.Windows\Models.cs" Link="Models.cs" />
     <Compile Include="..\..\CodexPetLimitRings.Windows\HudLayout.cs" Link="HudLayout.cs" />
+    <Compile Include="..\..\CodexPetLimitRings.Windows\PetInputProxyLayout.cs" Link="PetInputProxyLayout.cs" />
+    <Compile Include="..\..\CodexPetLimitRings.Windows\UnifiedDragPolicy.cs" Link="UnifiedDragPolicy.cs" />
+    <Compile Include="..\..\CodexPetLimitRings.Windows\Services\AppLog.cs" Link="Services\AppLog.cs" />
+    <Compile Include="..\..\CodexPetLimitRings.Windows\Services\CodexPaths.cs" Link="Services\CodexPaths.cs" />
+    <Compile Include="..\..\CodexPetLimitRings.Windows\Services\UsageService.cs" Link="Services\UsageService.cs" />
   </ItemGroup>
 </Project>

@@ -1,9 +1,10 @@
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
-using System.Windows.Interop;
+using System.Windows.Input;
 using System.Windows.Media;
 using CodexPetLimitRings.Windows.Interop;
+using InputMouseEventArgs = System.Windows.Input.MouseEventArgs;
 
 namespace CodexPetLimitRings.Windows.Views;
 
@@ -12,7 +13,14 @@ public partial class PotionWindow : Window
     private const double GlassSize = 67;
     private readonly string _accessibleLabel;
     private double _appliedScale = double.NaN;
+    private bool _pointerPressed;
+    private bool _pointerMoved;
+    private ScreenPointer _pressPointer;
     public event Action? PotionClicked;
+    internal event Action<ScreenPointer>? PointerPressed;
+    internal event Action<ScreenPointer>? PointerMoved;
+    internal event Action<ScreenPointer>? PointerReleased;
+    internal event Action? PointerCancelled;
 
     public PotionWindow(string label, System.Windows.Media.Color dark, System.Windows.Media.Color mid, System.Windows.Media.Color bright, System.Windows.Media.Color surface)
     {
@@ -25,7 +33,15 @@ public partial class PotionWindow : Window
         LiquidSurface.Fill = new SolidColorBrush(surface);
         AutomationProperties.SetName(this, _accessibleLabel);
         AutomationProperties.SetName(Root, _accessibleLabel);
-        SourceInitialized += (_, _) => NativeMethods.MakeNoActivate(this);
+        Root.IsHitTestVisible = true;
+        SourceInitialized += (_, _) =>
+        {
+            NativeMethods.ConfigurePotionInput(this, directPotionClicksEnabled: true);
+        };
+        PreviewMouseLeftButtonDown += OnMouseLeftButtonDown;
+        PreviewMouseMove += OnMouseMove;
+        PreviewMouseLeftButtonUp += OnMouseLeftButtonUp;
+        LostMouseCapture += OnLostMouseCapture;
     }
 
     public void UpdateUsage(double? remaining, long? resetAt, string source)
@@ -86,5 +102,48 @@ public partial class PotionWindow : Window
         Canvas.SetTop(LabelContainer, 93 * scale - LabelContainer.Height / 2);
     }
 
-    private void Root_OnClick(object sender, RoutedEventArgs e) => PotionClicked?.Invoke();
+    private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs eventArgs)
+    {
+        if (eventArgs.ChangedButton != MouseButton.Left) return;
+        eventArgs.Handled = true;
+        _pointerPressed = true;
+        _pointerMoved = false;
+        _pressPointer = ToScreenPointer(eventArgs);
+        Mouse.Capture(this, CaptureMode.Element);
+        PointerPressed?.Invoke(_pressPointer);
+    }
+
+    private void OnMouseMove(object sender, InputMouseEventArgs eventArgs)
+    {
+        if (!_pointerPressed) return;
+        eventArgs.Handled = true;
+        var pointer = ToScreenPointer(eventArgs);
+        _pointerMoved |= UnifiedDragPolicy.IsDrag(_pressPointer, pointer);
+        PointerMoved?.Invoke(pointer);
+    }
+
+    private void OnMouseLeftButtonUp(object sender, MouseButtonEventArgs eventArgs)
+    {
+        if (!_pointerPressed || eventArgs.ChangedButton != MouseButton.Left) return;
+        eventArgs.Handled = true;
+        var pointer = ToScreenPointer(eventArgs);
+        var clicked = !_pointerMoved;
+        _pointerPressed = false;
+        PointerReleased?.Invoke(pointer);
+        if (IsMouseCaptured) Mouse.Capture(null);
+        if (clicked) PotionClicked?.Invoke();
+    }
+
+    private void OnLostMouseCapture(object sender, InputMouseEventArgs eventArgs)
+    {
+        if (!_pointerPressed) return;
+        _pointerPressed = false;
+        PointerCancelled?.Invoke();
+    }
+
+    private ScreenPointer ToScreenPointer(InputMouseEventArgs eventArgs)
+    {
+        var point = PointToScreen(eventArgs.GetPosition(this));
+        return new ScreenPointer(point.X, point.Y);
+    }
 }

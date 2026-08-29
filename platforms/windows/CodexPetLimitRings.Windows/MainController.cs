@@ -18,6 +18,8 @@ public sealed class MainController : IDisposable
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly PotionWindow _primaryPotion = new("5H", System.Windows.Media.Color.FromRgb(56, 4, 6), System.Windows.Media.Color.FromRgb(184, 9, 14), System.Windows.Media.Color.FromRgb(255, 61, 20), System.Windows.Media.Color.FromRgb(255, 107, 31));
     private readonly PotionWindow _secondaryPotion = new("WK", System.Windows.Media.Color.FromRgb(6, 18, 61), System.Windows.Media.Color.FromRgb(10, 82, 194), System.Windows.Media.Color.FromRgb(20, 199, 235), System.Windows.Media.Color.FromRgb(46, 224, 255));
+    private readonly PetInputProxyWindow _petInputProxy = new();
+    private readonly UnifiedDragController _unifiedDrag = new();
     private readonly UsageDetailsWindow _details = new();
     private readonly SettingsWindow _settingsWindow = new();
     private readonly Forms.NotifyIcon _tray = new();
@@ -27,10 +29,13 @@ public sealed class MainController : IDisposable
     private PetAnchor? _anchor;
     private DateTimeOffset _lastUsageAttempt = DateTimeOffset.MinValue;
     private DateTimeOffset _lastUsageSuccess = DateTimeOffset.MinValue;
+    private DateTimeOffset _lastAnchorDiagnostic = DateTimeOffset.MinValue;
     private CancellationTokenSource? _usageCancellation;
+    private string? _verificationCapturePath;
     private bool _refreshing;
     private bool _petVisible;
     private long _visibilityGeneration;
+    private DragPreview? _dragPreview;
 
     public MainController()
     {
@@ -39,11 +44,24 @@ public sealed class MainController : IDisposable
         _alertService = new ThresholdAlertService(_store);
     }
 
-    public void Start(bool showSettings = false)
+    public void Start(bool showSettings = false, string? verificationCapturePath = null)
     {
+        _verificationCapturePath = verificationCapturePath;
+        AppLog.Write($"HUD state source: {_stateReader.StatePath}");
         ConfigureTray();
         _primaryPotion.PotionClicked += () => ShowDetails(_primaryPotion);
         _secondaryPotion.PotionClicked += () => ShowDetails(_secondaryPotion);
+        _petInputProxy.PointerPressed += point => BeginUnifiedInteraction(UnifiedDragSurface.Pet, point);
+        _petInputProxy.PointerMoved += ContinueUnifiedInteraction;
+        _petInputProxy.PointerReleased += EndUnifiedInteraction;
+        _petInputProxy.PointerCancelled += CancelUnifiedInteraction;
+        _petInputProxy.HoverMoved += ForwardPetHover;
+        BindPotionDrag(_primaryPotion);
+        BindPotionDrag(_secondaryPotion);
+        _unifiedDrag.DragStarted += BeginDragPreview;
+        _unifiedDrag.DragMoved += MoveDragPreview;
+        _unifiedDrag.DragFinished += EndDragPreview;
+        _unifiedDrag.StatusChanged += AppLog.Write;
         _details.RefreshRequested += () => _ = RefreshUsageAsync(force: true);
         _settingsWindow.SettingsChanged += ApplySettings;
         _settingsWindow.CleanupRequested += RunCleanup;
@@ -59,20 +77,69 @@ public sealed class MainController : IDisposable
         try
         {
             RunScheduledCleanupIfNeeded();
+            if (_unifiedDrag.IsDragging) return;
             var candidate = _stateReader.ReadVisibleCandidate();
-            var anchor = NativeMethods.FindVisiblePetAnchor(candidate);
+            var anchor = NativeMethods.FindVisiblePetAnchor(candidate, out var anchorDiagnostic);
+            if (_dragPreview is not null)
+            {
+                var settled =
+                    anchor is not null &&
+                    (Math.Abs(anchor.X - _dragPreview.Anchor.X) > 0.5 ||
+                     Math.Abs(anchor.Y - _dragPreview.Anchor.Y) > 0.5);
+                if (settled)
+                {
+                    AppLog.Write(
+                        $"Unified drag settled: anchor={anchor!.X:0.##},{anchor.Y:0.##}, " +
+                        $"expected={_dragPreview.ExpectedAnchorX:0.##},{_dragPreview.ExpectedAnchorY:0.##}.");
+                    _dragPreview = null;
+                }
+                else if (DateTimeOffset.Now < _dragPreview.HoldUntil)
+                {
+                    return;
+                }
+                else
+                {
+                    AppLog.Write(
+                        $"Unified drag settle timed out: expected=" +
+                        $"{_dragPreview.ExpectedAnchorX:0.##},{_dragPreview.ExpectedAnchorY:0.##}; " +
+                        $"actual={(anchor is null ? "unavailable" : $"{anchor.X:0.##},{anchor.Y:0.##}")}.");
+                    _dragPreview = null;
+                }
+            }
             if (anchor is null)
             {
+                if (DateTimeOffset.Now - _lastAnchorDiagnostic >= TimeSpan.FromSeconds(30))
+                {
+                    var state = candidate is null
+                        ? "no visible pet candidate"
+                        : $"candidate x={candidate.WindowX:0.##}, y={candidate.WindowY:0.##}, direct={candidate.DirectCoordinates}";
+                    AppLog.Write($"Pet anchor unavailable: {state}; {anchorDiagnostic}.");
+                    _lastAnchorDiagnostic = DateTimeOffset.Now;
+                }
                 HideHud();
                 return;
             }
 
             var justShown = !_petVisible;
+            if (justShown)
+            {
+                AppLog.Write(
+                    $"Pet anchor acquired: x={anchor.X:0.##}, y={anchor.Y:0.##}, " +
+                    $"size={anchor.Width:0.##}x{anchor.Height:0.##}.");
+            }
             _petVisible = true;
             _anchor = anchor;
             PlacePotions(anchor);
+            PlacePetInputProxy(anchor);
             if (!_primaryPotion.IsVisible) _primaryPotion.Show();
             if (!_secondaryPotion.IsVisible) _secondaryPotion.Show();
+            UpdatePotionInputRouting(anchor);
+            if (!_petInputProxy.IsVisible)
+            {
+                _petInputProxy.Show();
+                NativeMethods.ConfigurePetInputProxy(_petInputProxy);
+            }
+            if (_petInputProxy.IsVisible) NativeMethods.PlacePetInputProxy(_petInputProxy);
             if (justShown || DateTimeOffset.Now - _lastUsageAttempt >= TimeSpan.FromSeconds(30))
             {
                 _ = RefreshUsageAsync(force: justShown);
@@ -89,11 +156,15 @@ public sealed class MainController : IDisposable
     {
         if (_petVisible)
         {
+            AppLog.Write("Pet anchor lost; potion HUD hidden.");
             _visibilityGeneration++;
             _usageCancellation?.Cancel();
         }
         _petVisible = false;
+        _unifiedDrag.Cancel();
+        _dragPreview = null;
         _anchor = null;
+        _petInputProxy.Hide();
         _primaryPotion.Hide();
         _secondaryPotion.Hide();
         _details.Hide();
@@ -109,6 +180,108 @@ public sealed class MainController : IDisposable
         _primaryPotion.Top = placement.Y;
         _secondaryPotion.Left = placement.SecondaryX;
         _secondaryPotion.Top = placement.Y;
+    }
+
+    private void PlacePetInputProxy(PetAnchor anchor)
+    {
+        _petInputProxy.Apply(PetInputProxyLayout.Calculate(anchor));
+    }
+
+    private void BindPotionDrag(PotionWindow potion)
+    {
+        potion.PointerPressed += point => BeginUnifiedInteraction(UnifiedDragSurface.Potion, point);
+        potion.PointerMoved += ContinueUnifiedInteraction;
+        potion.PointerReleased += EndUnifiedInteraction;
+        potion.PointerCancelled += CancelUnifiedInteraction;
+    }
+
+    private void BeginUnifiedInteraction(UnifiedDragSurface surface, ScreenPointer pointer)
+    {
+        if (!_petVisible ||
+            _anchor is null ||
+            !NativeMethods.TryGetPhysicalWindowRect(_petInputProxy, out var petBounds))
+        {
+            return;
+        }
+        _unifiedDrag.Press(surface, pointer, _anchor, petBounds);
+    }
+
+    private void ContinueUnifiedInteraction(ScreenPointer pointer) =>
+        _unifiedDrag.Move(pointer);
+
+    private void EndUnifiedInteraction(ScreenPointer pointer) =>
+        _unifiedDrag.Release(pointer);
+
+    private void CancelUnifiedInteraction() =>
+        _unifiedDrag.Cancel();
+
+    private void BeginDragPreview(PetAnchor anchor)
+    {
+        _details.Hide();
+        _dragPreview = new DragPreview(
+            anchor,
+            _primaryPotion.Left,
+            _primaryPotion.Top,
+            _secondaryPotion.Left,
+            _secondaryPotion.Top,
+            _petInputProxy.Left,
+            _petInputProxy.Top,
+            anchor.X,
+            anchor.Y,
+            DateTimeOffset.MaxValue);
+    }
+
+    private void MoveDragPreview(double deltaX, double deltaY)
+    {
+        var preview = _dragPreview;
+        if (preview is null) return;
+        _primaryPotion.Left = preview.PrimaryLeft + deltaX;
+        _primaryPotion.Top = preview.PrimaryTop + deltaY;
+        _secondaryPotion.Left = preview.SecondaryLeft + deltaX;
+        _secondaryPotion.Top = preview.SecondaryTop + deltaY;
+        _petInputProxy.Left = preview.ProxyLeft + deltaX;
+        _petInputProxy.Top = preview.ProxyTop + deltaY;
+    }
+
+    private void EndDragPreview(
+        PetAnchor anchor,
+        double deltaX,
+        double deltaY,
+        bool delivered)
+    {
+        var preview = _dragPreview;
+        if (preview is null) return;
+        if (!delivered)
+        {
+            _dragPreview = null;
+            Tick();
+            return;
+        }
+        MoveDragPreview(deltaX, deltaY);
+        _dragPreview = preview with
+        {
+            ExpectedAnchorX = anchor.X + deltaX,
+            ExpectedAnchorY = anchor.Y + deltaY,
+            HoldUntil = DateTimeOffset.Now + TimeSpan.FromSeconds(2)
+        };
+    }
+
+    private void ForwardPetHover()
+    {
+        if (!_petVisible || _anchor is null || _unifiedDrag.IsPressed) return;
+        NativeMethods.ForwardPetHover(_anchor.NativeWindowHandle);
+    }
+
+    private void UpdatePotionInputRouting(PetAnchor anchor)
+    {
+        NativeMethods.PlacePotionWindow(
+            _primaryPotion,
+            anchor.NativeWindowHandle,
+            directPotionClicksEnabled: true);
+        NativeMethods.PlacePotionWindow(
+            _secondaryPotion,
+            anchor.NativeWindowHandle,
+            directPotionClicksEnabled: true);
     }
 
     private async Task RefreshUsageAsync(bool force)
@@ -130,6 +303,14 @@ public sealed class MainController : IDisposable
                 _lastUsageSuccess = DateTimeOffset.Now;
                 _primaryPotion.UpdateUsage(_usage.PrimaryRemaining, _usage.PrimaryReset, _usage.Source);
                 _secondaryPotion.UpdateUsage(_usage.SecondaryRemaining, _usage.SecondaryReset, _usage.Source);
+                AppLog.Write(
+                    $"Usage refreshed: 5H={FormatUsageForLog(_usage.PrimaryRemaining)}, " +
+                    $"WK={FormatUsageForLog(_usage.SecondaryRemaining)}, source={_usage.Source}.");
+                if (_verificationCapturePath is { } capturePath)
+                {
+                    _verificationCapturePath = null;
+                    _ = CaptureVerificationAsync(capturePath);
+                }
                 foreach (var alert in _alertService.Evaluate(_usage, _settings)) ShowAlert(alert);
             }
             else if (refreshed is null)
@@ -254,17 +435,89 @@ public sealed class MainController : IDisposable
         _tray.Text = $"Codex 포션 HUD · 5H {primary} · WK {weekly}{state}";
     }
 
+    private static string FormatUsageForLog(double? remaining) =>
+        remaining is null
+            ? "--"
+            : $"{Math.Round(remaining.Value, 2):0.##}%";
+
+    private async Task CaptureVerificationAsync(string path)
+    {
+        await Task.Delay(750);
+        try
+        {
+            if (!_petVisible || _anchor is null)
+            {
+                AppLog.Write("Verification capture skipped: pet anchor is no longer visible.");
+                return;
+            }
+            _primaryPotion.UpdateLayout();
+            _secondaryPotion.UpdateLayout();
+            if (!NativeMethods.TryGetPhysicalWindowRect(_primaryPotion, out var primaryBounds) ||
+                !NativeMethods.TryGetPhysicalWindowRect(_secondaryPotion, out var secondaryBounds) ||
+                _primaryPotion.ActualWidth <= 0 ||
+                _primaryPotion.ActualHeight <= 0)
+            {
+                AppLog.Write("Verification capture skipped: potion window bounds unavailable.");
+                return;
+            }
+
+            var scaleX = primaryBounds.Width / _primaryPotion.ActualWidth;
+            var scaleY = primaryBounds.Height / _primaryPotion.ActualHeight;
+            var anchorBounds = new Rectangle(
+                primaryBounds.Left + (int)Math.Round((_anchor.X - _primaryPotion.Left) * scaleX),
+                primaryBounds.Top + (int)Math.Round((_anchor.Y - _primaryPotion.Top) * scaleY),
+                Math.Max(1, (int)Math.Round(_anchor.Width * scaleX)),
+                Math.Max(1, (int)Math.Round(_anchor.Height * scaleY)));
+            var captureBounds = Rectangle.Union(Rectangle.Union(primaryBounds, secondaryBounds), anchorBounds);
+            captureBounds.Inflate(72, 72);
+            captureBounds = Rectangle.Intersect(captureBounds, Forms.SystemInformation.VirtualScreen);
+            if (captureBounds.Width <= 0 || captureBounds.Height <= 0)
+            {
+                AppLog.Write("Verification capture skipped: calculated capture area is empty.");
+                return;
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            using var bitmap = new Bitmap(captureBounds.Width, captureBounds.Height);
+            using var graphics = Graphics.FromImage(bitmap);
+            graphics.CopyFromScreen(captureBounds.Left, captureBounds.Top, 0, 0, captureBounds.Size);
+            bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+            AppLog.Write(
+                $"Verification capture saved: {path}; area={captureBounds.Left},{captureBounds.Top}," +
+                $"{captureBounds.Width}x{captureBounds.Height}.");
+        }
+        catch (Exception error)
+        {
+            AppLog.Write($"Verification capture failed: {error.GetType().Name}: {error.Message}");
+        }
+    }
+
     public void Dispose()
     {
         _timer.Stop();
+        _petVisible = false;
         _usageCancellation?.Cancel();
+        _unifiedDrag.Dispose();
         _tray.Visible = false;
         _tray.Dispose();
         _trayIcon?.Dispose();
         _usageService.Dispose();
+        _petInputProxy.Close();
         _primaryPotion.Close();
         _secondaryPotion.Close();
         _details.ClosePermanently();
         _settingsWindow.ClosePermanently();
     }
+
+    private sealed record DragPreview(
+        PetAnchor Anchor,
+        double PrimaryLeft,
+        double PrimaryTop,
+        double SecondaryLeft,
+        double SecondaryTop,
+        double ProxyLeft,
+        double ProxyTop,
+        double ExpectedAnchorX,
+        double ExpectedAnchorY,
+        DateTimeOffset HoldUntil);
 }

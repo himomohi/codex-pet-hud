@@ -4,14 +4,28 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 
 ## [Unreleased]
 
-### Changed
-
-- Make release completion a single guarded command that tags the pushed commit, waits for every platform job, and verifies the public latest release and checksum-bearing asset set
-
 ### Planned
 
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
+
+## [0.1.10] - 2026-08-29
+
+### Added
+
+- Add repeatable Windows input-relay self-tests, live hit probes, runtime diagnostics, and optional verification captures for pet and potion interaction
+
+### Changed
+
+- Make release completion a single guarded command that tags the pushed commit, waits for every platform job, and verifies the public latest release and checksum-bearing asset set
+- Make the Windows pet and both potion windows one drag group: dragging any of the three surfaces moves the native Codex pet and keeps both HUD potions aligned
+
+### Fixed
+
+- Deliver Windows pet input through the live Electron window message path so pet clicks and drags reach current Codex builds that manage their own input shape
+- Recalculate client coordinates after every drag step so the moving native pet follows the pointer without compounding horizontal drift
+- Read current Codex Pro five-hour limits from `additional_rate_limits` while preserving the account-wide weekly window
+- Wait for the running Windows HUD process to exit before install or uninstall changes its files
 
 ## [0.1.9] - 2026-07-29
 
@@ -115,7 +129,8 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.9...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.10...HEAD
+[0.1.10]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.6...v0.1.7

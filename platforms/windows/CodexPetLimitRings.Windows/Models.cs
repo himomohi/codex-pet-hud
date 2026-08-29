@@ -53,7 +53,8 @@ public sealed record PetAnchor(
     double WorkX,
     double WorkY,
     double WorkWidth,
-    double WorkHeight)
+    double WorkHeight,
+    nint NativeWindowHandle = default)
 {
     public double Right => X + Width;
     public double CenterY => Y + Height / 2;

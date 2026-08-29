@@ -1,4 +1,6 @@
 using CodexPetLimitRings.Windows;
+using CodexPetLimitRings.Windows.Services;
+using System.Text.Json;
 
 const double epsilon = 0.001;
 var settings = new OverlaySettings { Scale = 0.9575376884422109, PotionGap = 10 };
@@ -20,6 +22,27 @@ anchors.Add(new PetAnchor(1803, 914, 112, 121, "bottom-right", 0, 0, 1920, 1040)
 anchors.Add(new PetAnchor(20, 200, 112, 121, "narrow", 0, 0, 160, 900));
 
 var baseline = HudLayout.Calculate(anchors[0], settings);
+if (UnifiedDragPolicy.IsDrag(new ScreenPointer(100, 100), new ScreenPointer(103, 100)))
+    throw new Exception("Unified drag activated below the four-pixel threshold.");
+if (!UnifiedDragPolicy.IsDrag(new ScreenPointer(100, 100), new ScreenPointer(104, 100)))
+    throw new Exception("Unified drag did not activate at the four-pixel threshold.");
+var virtualPointer = UnifiedDragPolicy.ToVirtualPointer(
+    new ScreenPointer(100, 100),
+    new ScreenPointer(500, 600),
+    new ScreenPointer(135, 76));
+Equal(535, virtualPointer.X, "potion drag virtual x");
+Equal(576, virtualPointer.Y, "potion drag virtual y");
+var dipDelta = UnifiedDragPolicy.ToDipDelta(
+    new ScreenPointer(100, 100),
+    new ScreenPointer(140, 120),
+    2);
+Equal(20, dipDelta.X, "unified drag DPI x");
+Equal(10, dipDelta.Y, "unified drag DPI y");
+var proxyPlacement = PetInputProxyLayout.Calculate(anchors[0]);
+Equal(anchors[0].X, proxyPlacement.X, "pet proxy x");
+Equal(anchors[0].Y, proxyPlacement.Y, "pet proxy y");
+Equal(anchors[0].Width, proxyPlacement.Width, "pet proxy width");
+Equal(anchors[0].Height, proxyPlacement.Height, "pet proxy height");
 foreach (var anchor in anchors)
 {
     foreach (var alignment in new[] { "split", "left", "right", "above", "below" })
@@ -84,7 +107,45 @@ var safeBelow = HudLayout.Calculate(explicitBottomEdge, new OverlaySettings { Al
 if (safeBelow.Y + safeBelow.PotionHeight > explicitBottomEdge.Y)
     throw new Exception("below alignment did not fall back above the pet at the screen edge");
 
+using var currentProUsage = JsonDocument.Parse(
+    """
+    {
+      "rate_limit": {
+        "primary_window": {
+          "used_percent": 19,
+          "limit_window_seconds": 604800,
+          "reset_at": 1788462027
+        },
+        "secondary_window": null
+      },
+      "additional_rate_limits": [
+        {
+          "limit_name": "GPT-5.3-Codex-Spark",
+          "rate_limit": {
+            "primary_window": {
+              "used_percent": 0,
+              "limit_window_seconds": 18000,
+              "reset_at": 1788004567
+            },
+            "secondary_window": {
+              "used_percent": 0,
+              "limit_window_seconds": 604800,
+              "reset_at": 1788591367
+            }
+          }
+        }
+      ]
+    }
+    """);
+var currentProSnapshot = UsageService.Parse(currentProUsage.RootElement)
+    ?? throw new Exception("current Pro usage payload did not parse");
+Equal(0, currentProSnapshot.PrimaryUsed ?? double.NaN, "current Pro 5-hour usage");
+Equal(19, currentProSnapshot.SecondaryUsed ?? double.NaN, "current Pro weekly usage");
+
 Console.WriteLine($"Layout adversarial tests passed: {anchors.Count * 5} movement/alignment cases; fixed={baseline.PotionWidth:F3}x{baseline.PotionHeight:F3}");
+Console.WriteLine("Unified drag tests passed: threshold, potion-to-pet virtual pointer mapping, DPI delta.");
+Console.WriteLine("Pet proxy tests passed: anchor bounds remain the exact interactive surface.");
+Console.WriteLine("Usage compatibility test passed: additional_rate_limits 5-hour + weekly mapping.");
 return;
 
 static void Equal(double expected, double actual, string message)

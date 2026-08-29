@@ -19,7 +19,13 @@ Remove-Item $Artifact -Recurse -Force -ErrorAction SilentlyContinue
 dotnet publish $Project -c Release -r $Runtime --self-contained true -p:PublishSingleFile=true -o $Artifact
 if ($LASTEXITCODE -ne 0) { throw "Windows publish failed." }
 
-Get-Process CodexPetLimitRings -ErrorAction SilentlyContinue | Stop-Process -Force
+$RunningProcesses = @(Get-Process CodexPetLimitRings -ErrorAction SilentlyContinue)
+if ($RunningProcesses) {
+    $RunningProcesses | Stop-Process -Force
+    foreach ($RunningProcess in $RunningProcesses) {
+        $RunningProcess.WaitForExit(5000)
+    }
+}
 Remove-ItemProperty $RunKey -Name "CodexPetLimitRings" -ErrorAction SilentlyContinue
 New-Item $InstallRoot -ItemType Directory -Force | Out-Null
 Copy-Item (Join-Path $Artifact "*") $InstallRoot -Recurse -Force

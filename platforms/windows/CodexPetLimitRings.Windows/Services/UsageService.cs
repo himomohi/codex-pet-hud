@@ -22,6 +22,10 @@ public sealed class UsageService : IDisposable
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://chatgpt.com/backend-api/wham/usage");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        var assemblyVersion = typeof(UsageService).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("CodexPetLimitRings", assemblyVersion));
+        request.Headers.Referrer = new Uri("https://chatgpt.com/");
+        request.Headers.TryAddWithoutValidation("Origin", "https://chatgpt.com");
         if (!string.IsNullOrWhiteSpace(credentials?.AccountId))
         {
             request.Headers.TryAddWithoutValidation("ChatGPT-Account-Id", credentials.AccountId);
@@ -58,7 +62,7 @@ public sealed class UsageService : IDisposable
         catch { return null; }
     }
 
-    private static UsageSnapshot? Parse(JsonElement root)
+    internal static UsageSnapshot? Parse(JsonElement root)
     {
         if (root.ValueKind is not JsonValueKind.Object) return null;
         var container = root.TryGetProperty("rate_limit", out var rateLimit) && rateLimit.ValueKind is JsonValueKind.Object
@@ -68,6 +72,41 @@ public sealed class UsageService : IDisposable
                 : root;
         var primary = FindWindow(container, "primary", "primary_window");
         var secondary = FindWindow(container, "secondary", "secondary_window");
+        WindowValue? weekly = primary?.WindowSeconds >= TimeSpan.FromDays(1).TotalSeconds
+            ? primary
+            : secondary?.WindowSeconds >= TimeSpan.FromDays(1).TotalSeconds
+                ? secondary
+                : null;
+
+        if (root.TryGetProperty("additional_rate_limits", out var additional) &&
+            additional.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var item in additional.EnumerateArray())
+            {
+                if (item.ValueKind is not JsonValueKind.Object) continue;
+                var extraContainer = item.TryGetProperty("rate_limit", out var extraRateLimit) &&
+                                     extraRateLimit.ValueKind is JsonValueKind.Object
+                    ? extraRateLimit
+                    : item.TryGetProperty("rateLimit", out var camelExtraRateLimit) &&
+                      camelExtraRateLimit.ValueKind is JsonValueKind.Object
+                        ? camelExtraRateLimit
+                        : default;
+                if (extraContainer.ValueKind is not JsonValueKind.Object) continue;
+
+                var extraPrimary = FindWindow(extraContainer, "primary", "primary_window");
+                if (extraPrimary?.Used is null ||
+                    extraPrimary.WindowSeconds is not { } extraSeconds ||
+                    extraSeconds >= TimeSpan.FromDays(1).TotalSeconds)
+                {
+                    continue;
+                }
+
+                var extraSecondary = FindWindow(extraContainer, "secondary", "secondary_window");
+                primary = extraPrimary;
+                secondary = weekly ?? extraSecondary;
+                break;
+            }
+        }
         var primaryLooksWeekly = primary?.WindowSeconds >= TimeSpan.FromDays(1).TotalSeconds;
         var secondaryLooksShort = secondary?.WindowSeconds < TimeSpan.FromDays(1).TotalSeconds;
         if (primaryLooksWeekly && (secondary is null || secondaryLooksShort))
