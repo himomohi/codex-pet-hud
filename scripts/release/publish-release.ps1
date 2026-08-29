@@ -41,7 +41,7 @@ function Get-GnuBash {
   foreach ($candidate in $candidates | Select-Object -Unique) {
     if (-not (Test-Path -LiteralPath $candidate)) { continue }
     $version = & $candidate --version 2>$null | Select-Object -First 1
-    if ($LASTEXITCODE -eq 0 -and $version -match 'GNU bash') { return $candidate }
+    if ($version -match 'GNU bash') { return $candidate }
   }
 
   throw 'GNU Bash was not found. Install Git for Windows or provide bash on PATH.'
@@ -147,8 +147,9 @@ if (-not [string]::IsNullOrWhiteSpace($remoteTag)) { throw "Remote tag already e
 if ($LASTEXITCODE -eq 0) { throw "GitHub Release already exists: $Tag" }
 
 $bash = Get-GnuBash
-Invoke-Checked $bash @('scripts/release/scan-secrets.sh')
-Invoke-Checked $bash @('scripts/release/verify-release.sh', $Tag)
+$bashPrefix = if ($IsWindows) { @('--login') } else { @() }
+Invoke-Checked -Command $bash -Arguments (@($bashPrefix) + @('scripts/release/scan-secrets.sh'))
+Invoke-Checked -Command $bash -Arguments (@($bashPrefix) + @('scripts/release/verify-release.sh', $Tag))
 Invoke-Checked dotnet @('build', 'platforms/windows/CodexPetLimitRings.Windows/CodexPetLimitRings.Windows.csproj', '-c', 'Release')
 Invoke-Checked dotnet @('run', '--project', 'platforms/windows/tests/LayoutTests/LayoutTests.csproj', '-c', 'Release')
 
@@ -156,8 +157,8 @@ if ($IsWindows) {
   Invoke-Checked pwsh @('-NoProfile', '-File', 'scripts/release/build-windows.ps1', '-Runtime', 'win-x64', '-Tag', $Tag)
   Invoke-Checked pwsh @('-NoProfile', '-File', 'scripts/release/build-windows.ps1', '-Runtime', 'win-arm64', '-Tag', $Tag)
 } elseif ($IsMacOS) {
-  Invoke-Checked $bash @('scripts/test-macos.sh')
-  Invoke-Checked $bash @('scripts/release/build-macos.sh', $Tag)
+  Invoke-Checked -Command $bash -Arguments (@($bashPrefix) + @('scripts/test-macos.sh'))
+  Invoke-Checked -Command $bash -Arguments (@($bashPrefix) + @('scripts/release/build-macos.sh', $Tag))
 } else {
   throw 'Release publishing is supported only from Windows or macOS.'
 }

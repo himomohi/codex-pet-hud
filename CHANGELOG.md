@@ -18,6 +18,8 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 ### Changed
 
 - Make release completion a single guarded command that tags the pushed commit, waits for every platform job, and verifies the public latest release and checksum-bearing asset set
+- Detect Git for Windows Bash from its version output even when PowerShell does not retain a native pipeline exit code
+- Run Git for Windows release checks in its login environment so required Unix tools are always available
 - Make the Windows pet and both potion windows one drag group: dragging any of the three surfaces moves the native Codex pet and keeps both HUD potions aligned
 
 ### Fixed
