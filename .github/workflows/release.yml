@@ -3,6 +3,15 @@ name: Release preview
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "검증할 버전 (태그 생성과 릴리즈 공개 없이 빌드·검증만 수행)"
+        required: true
+        type: string
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
 permissions:
   contents: read
@@ -15,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
       - run: ./scripts/release/scan-secrets.sh
-      - run: ./scripts/release/verify-release.sh "$GITHUB_REF_NAME"
+      - run: ./scripts/release/verify-release.sh "$RELEASE_TAG"
 
   macos:
     needs: validate
@@ -25,10 +34,18 @@ jobs:
         with:
           persist-credentials: false
       - run: ./scripts/test-macos.sh
-      - run: ./scripts/release/build-macos.sh "$GITHUB_REF_NAME"
+        env:
+          CODEX_PET_RENDER_OUTPUT: ${{ runner.temp }}/potion-renders
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: macos-potion-renders
+          path: ${{ runner.temp }}/potion-renders/*.png
+          if-no-files-found: warn
+      - run: ./scripts/release/build-macos.sh "$RELEASE_TAG"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: macos
+          name: release-macos
           path: dist/*.zip
           if-no-files-found: error
 
@@ -46,10 +63,10 @@ jobs:
         with:
           dotnet-version: 8.0.x
       - shell: pwsh
-        run: ./scripts/release/build-windows.ps1 -Runtime "${{ matrix.runtime }}" -Tag "$env:GITHUB_REF_NAME"
+        run: ./scripts/release/build-windows.ps1 -Runtime "${{ matrix.runtime }}" -Tag "$env:RELEASE_TAG"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-${{ matrix.runtime }}
+          name: release-windows-${{ matrix.runtime }}
           path: dist/*.zip
           if-no-files-found: error
 
@@ -66,8 +83,10 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+          pattern: 'release-*'
       - run: ./scripts/release/verify-assets.sh dist
       - name: Publish latest unsigned preview release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

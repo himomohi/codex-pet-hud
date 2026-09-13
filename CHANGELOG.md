@@ -4,16 +4,24 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 
 ## [Unreleased]
 
-### Added
-
-- Windows 네이티브 설정 창 첫 화면에 기본 포션과 새 포션 5종 선택 카드를 추가했다.
-- 선택한 모양을 두 HUD의 프레임·액체 마스크에 즉시 적용하고 재시작 후에도 보존한다.
-- 설정 선택 카드의 키보드 조작, 기존 설정 보존, 내장 이미지·채움·배율·좁은 창 검증을 추가했다.
-
 ### Planned
 
 - Developer ID signing and notarization for macOS
 - Authenticode signing and real-device validation for Windows
+
+## [0.1.11] - 2026-09-13
+
+### Added
+
+- macOS와 Windows 설정 첫 화면에서 기본 포션과 천청 오브·장미 하트·호박빛 별·보랏빛 초승달·신록 잎새를 선택할 수 있다.
+- macOS 메뉴 막대에서도 포션 디자인을 선택하고 현재 선택을 확인할 수 있다.
+- 선택한 모양을 두 HUD에 즉시 적용하고 재시작 후에도 보존한다. 5시간·주간 액체 색상과 기존 배치·알림 설정을 유지한다.
+
+### Changed
+
+- macOS 앱 번들에 미리보기·프레임·액체 마스크 15개를 포함하고, 두 플랫폼 이미지와 설정 계약의 일치를 검사한다.
+- 포션 선택·저장·채움·배율 테스트와 macOS 압축 파일의 이미지 포함 여부를 릴리즈 필수 검사에 추가한다.
+- 릴리즈 워크플로를 수동 실행하면 태그 생성과 공개 없이 세 플랫폼 빌드·압축 검사를 먼저 수행할 수 있다.
 
 ## [0.1.10] - 2026-08-29
 
@@ -137,7 +145,8 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - Access tokens remain in memory and are never copied to settings or logs
 - Release archives are checked for forbidden private files and include SHA-256 checksums
 
-[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.11...HEAD
+[0.1.11]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.9...v0.1.10
 [0.1.9]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/himomohi/codex-pet-hud/compare/v0.1.7...v0.1.8

@@ -1,5 +1,15 @@
 const bridge = window.webkit?.messageHandlers?.settings;
 const $ = (id) => document.getElementById(id);
+const potionStyles = {
+  classic: { name: "기본 포션" },
+  "celestial-orb": { name: "천청 오브", top: 25, bottom: 80 },
+  "rose-heart": { name: "장미 하트", top: 28, bottom: 81 },
+  "amber-star": { name: "호박빛 별", top: 29, bottom: 80 },
+  "lunar-crescent": { name: "보랏빛 초승달", top: 28, bottom: 83 },
+  "verdant-leaf": { name: "신록 잎새", top: 29, bottom: 85 },
+};
+const potionStyleControls = Array.from(document.querySelectorAll('input[name="potionStyle"]'));
+const normalizePotionStyle = (value) => Object.hasOwn(potionStyles, value) ? value : "classic";
 const controls = {
   scale: $("scale"),
   horizontalOffset: $("horizontalOffset"),
@@ -14,6 +24,7 @@ const controls = {
 };
 
 let state = {
+  potionStyle: "classic",
   scale: 1,
   horizontalOffset: 0,
   verticalOffset: 0,
@@ -41,6 +52,7 @@ function rangeFill(input) {
 }
 
 function readControls() {
+  state.potionStyle = normalizePotionStyle(potionStyleControls.find((control) => control.checked)?.value);
   state.scale = Number(controls.scale.value) / 100;
   state.horizontalOffset = Number(controls.horizontalOffset.value);
   state.verticalOffset = Number(controls.verticalOffset.value);
@@ -58,6 +70,23 @@ function renderPreview() {
   hud.style.left = `calc(50% + ${state.horizontalOffset * .35}px)`;
   hud.style.top = `calc(48% - ${state.verticalOffset * .35}px)`;
 
+  const style = potionStyles[state.potionStyle];
+  $("selectedPotionStyle").textContent = `현재 선택: ${style.name}`;
+  document.querySelectorAll(".hud-preview .potion").forEach((potion, index) => {
+    const remaining = index === 0 ? .93 : .99;
+    potion.classList.toggle("styled", state.potionStyle !== "classic");
+    potion.querySelector(".potion-glass .liquid").style.height = `${remaining * 100}%`;
+    if (state.potionStyle === "classic") return;
+    const mask = potion.querySelector(".potion-mask");
+    const frame = potion.querySelector(".potion-frame");
+    const assetPath = `potions/${state.potionStyle}`;
+    frame.src = `${assetPath}-frame.png`;
+    mask.style.setProperty("--potion-mask", `url("${window.potionMaskImages[state.potionStyle]}")`);
+    const liquid = mask.querySelector(".liquid");
+    liquid.style.bottom = `${96 - style.bottom}px`;
+    liquid.style.height = `${(style.bottom - style.top) * remaining}px`;
+  });
+
   $("scaleValue").textContent = `${Math.round(state.scale * 100)}%`;
   $("horizontalOffsetValue").textContent = `${Math.round(state.horizontalOffset)}px`;
   $("verticalOffsetValue").textContent = `${Math.round(state.verticalOffset)}px`;
@@ -71,7 +100,14 @@ function scheduleSave() {
   readControls();
   renderPreview();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => post({ type: "save", settings: state }), 150);
+  saveTimer = setTimeout(flushSave, 150);
+}
+
+function flushSave() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = undefined;
+  post({ type: "save", settings: state });
 }
 
 function formatBytes(bytes) {
@@ -109,6 +145,8 @@ function showToast(message) {
 window.applyNativeState = ({ settings, cleanup }) => {
   applyingNativeState = true;
   state = { ...state, ...settings };
+  state.potionStyle = normalizePotionStyle(state.potionStyle);
+  potionStyleControls.forEach((control) => { control.checked = control.value === state.potionStyle; });
   controls.scale.value = Math.round(state.scale * 100);
   controls.horizontalOffset.value = state.horizontalOffset;
   controls.verticalOffset.value = state.verticalOffset;
@@ -141,6 +179,8 @@ Object.values(controls).forEach((control) => {
   });
 });
 
+potionStyleControls.forEach((control) => control.addEventListener("change", scheduleSave));
+
 $("cleanupButton").addEventListener("click", () => {
   const button = $("cleanupButton");
   button.classList.add("loading");
@@ -150,11 +190,17 @@ $("cleanupButton").addEventListener("click", () => {
 });
 
 $("resetButton").addEventListener("click", () => {
-  if (window.confirm("배치와 크기 설정을 기본값으로 되돌릴까요?")) {
+  if (window.confirm("포션 디자인과 모든 설정을 기본값으로 되돌릴까요?")) {
+    clearTimeout(saveTimer);
+    saveTimer = undefined;
     post({ type: "reset" });
     showToast("기본값으로 되돌렸어요.");
   }
 });
 
-$("doneButton").addEventListener("click", () => post({ type: "close" }));
+$("doneButton").addEventListener("click", () => {
+  flushSave();
+  post({ type: "close" });
+});
+window.applyNativeState({ settings: state });
 post({ type: "ready" });

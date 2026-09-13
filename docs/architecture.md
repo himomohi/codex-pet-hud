@@ -40,6 +40,16 @@ The platform applications do not share UI source code. This keeps AppKit/launchd
 `tests/PotionTests`는 6종 직렬화, 내장 이미지, 미확인·0·50·100%, 세 가지 배율,
 480/520px 첫 화면 노출을 검사한다. 실제 클릭·키보드 선택·저장은 설치본에서 별도로 확인한다.
 
+## macOS 포션 선택 연결
+
+메뉴 막대의 **포션 디자인**과 `shared/settings`의 선택 카드는 같은 `potionStyle` 계약을 사용한다.
+웹 설정의 `save` 메시지 → `SettingsWindowController` → `RingsApp.applyOverlaySettings`가 JSON 저장, HUD 갱신, 열린 설정 화면 동기화를 담당한다.
+`RingsView`는 `shared/settings/potions`의 프레임·마스크로 실제 잔여량을 그리며 기존 5시간 빨강·주간 파랑을 유지한다.
+기본 모양은 기존 AppKit 렌더링을 사용한다. 소스 설치와 릴리즈 빌드는 모두 `settings` 폴더를 앱 리소스로 복사한다.
+
+`scripts/test-macos.sh`는 이전 설정 및 6종 저장·렌더링을 검사하고, `scripts/test-potion-assets.mjs`는 Windows와 macOS PNG 15개의 일치를 검사한다.
+릴리즈는 양쪽 네이티브 테스트와 macOS universal/Windows x64·ARM64 빌드, 압축 리소스 확인을 통과해야 공개한다.
+
 ## Trigger invariant
 
 Both native apps must show the HUD only when:

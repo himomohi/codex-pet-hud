@@ -13,6 +13,14 @@ Codex Pet HUD publishes unsigned preview builds from version tags. The tag is th
 7. The workflow creates the latest GitHub Release marked **Unsigned Preview** and verifies that GitHub exposes the tag as the latest release.
 8. Treat the release as complete only when `publish-release.ps1` reads back all three archives plus `SHA256SUMS.txt`, uploaded with SHA-256 digests and tied to the tagged commit.
 
+Windows에서 macOS 변경을 준비할 때는 `main` 푸시 후 같은 릴리즈 워크플로를 먼저 수동 실행해 macOS와 Windows의 테스트·빌드·압축 검사를 확인할 수 있다. 수동 실행은 태그를 만들거나 GitHub Release를 공개하지 않는다.
+
+```bash
+gh workflow run release.yml --ref main -f tag=vX.Y.Z
+```
+
+수동 검증 성공 후에도 정식 공개는 위의 `publish-release.ps1 -Tag vX.Y.Z`로 완료한다. 포션 테스트, 두 플랫폼 PNG 일치 검사, macOS 번들의 15개 이미지 검사가 릴리즈 검사에 포함된다.
+
 Audit an already-published version without mutation:
 
 ```powershell

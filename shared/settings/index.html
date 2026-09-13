@@ -31,10 +31,10 @@
     <section class="preview-column" aria-labelledby="previewTitle">
       <div class="section-heading">
         <div>
-          <h2 id="previewTitle">실시간 미리보기</h2>
-          <p>펫을 중심으로 포션 HUD의 균형을 확인하세요.</p>
+          <h2 id="previewTitle">디자인 미리보기</h2>
+          <p>포션 모양과 배치를 샘플 잔여량으로 확인하세요.</p>
         </div>
-        <span class="live-badge"><span></span> 실시간</span>
+        <span class="sample-badge">샘플 값</span>
       </div>
 
       <div class="preview-stage" id="previewStage">
@@ -47,6 +47,8 @@
             <div class="potion-cap"></div>
             <div class="potion-brace left"></div><div class="potion-brace right"></div>
             <div class="potion-glass"><div class="liquid"></div><span>93%</span></div>
+            <div class="potion-art" aria-hidden="true"><div class="potion-mask"><div class="liquid"></div></div><img class="potion-frame" alt=""></div>
+            <span class="potion-sample">93%</span>
             <b>5H</b>
           </div>
           <div class="pet-sprite" aria-label="포션 펫"></div>
@@ -54,14 +56,50 @@
             <div class="potion-cap"></div>
             <div class="potion-brace left"></div><div class="potion-brace right"></div>
             <div class="potion-glass"><div class="liquid"></div><span>99%</span></div>
+            <div class="potion-art" aria-hidden="true"><div class="potion-mask"><div class="liquid"></div></div><img class="potion-frame" alt=""></div>
+            <span class="potion-sample">99%</span>
             <b>WK</b>
           </div>
         </div>
-        <p class="preview-hint">슬라이더를 움직이면 실제 오버레이도 함께 바뀝니다.</p>
+        <p class="preview-hint">5H 93% · WK 99%는 미리보기용 값입니다.<br>디자인과 배치 변경은 실제 오버레이에 바로 적용됩니다.</p>
       </div>
     </section>
 
     <aside class="settings-panel" aria-label="오버레이 설정">
+      <section class="settings-section potion-selection" aria-labelledby="potionStyleTitle">
+        <div class="section-title">
+          <span class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5.2 8.7A2.8 2.8 0 0 0 7.2 21h9.6a2.8 2.8 0 0 0 2.4-4.3L14 8V3"/><path d="M7.5 15h9"/></svg></span>
+          <div><h3 id="potionStyleTitle">포션 디자인</h3><p>고른 디자인을 5H와 WK에 함께 적용해요.</p></div>
+        </div>
+        <fieldset class="potion-options">
+          <legend class="visually-hidden">포션 디자인 선택</legend>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="classic" checked>
+            <span class="potion-card"><span class="classic-thumbnail" aria-hidden="true"><span></span></span><span>기본 포션</span></span>
+          </label>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="celestial-orb">
+            <span class="potion-card"><img src="potions/celestial-orb.png" alt="" width="48" height="48"><span>천청 오브</span></span>
+          </label>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="rose-heart">
+            <span class="potion-card"><img src="potions/rose-heart.png" alt="" width="48" height="48"><span>장미 하트</span></span>
+          </label>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="amber-star">
+            <span class="potion-card"><img src="potions/amber-star.png" alt="" width="48" height="48"><span>호박빛 별</span></span>
+          </label>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="lunar-crescent">
+            <span class="potion-card"><img src="potions/lunar-crescent.png" alt="" width="48" height="48"><span>보랏빛 초승달</span></span>
+          </label>
+          <label class="potion-option">
+            <input type="radio" name="potionStyle" value="verdant-leaf">
+            <span class="potion-card"><img src="potions/verdant-leaf.png" alt="" width="48" height="48"><span>신록 잎새</span></span>
+          </label>
+        </fieldset>
+        <p class="selected-potion" id="selectedPotionStyle" aria-live="polite">현재 선택: 기본 포션</p>
+      </section>
       <section class="settings-section">
         <div class="section-title">
           <span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></span>
@@ -143,6 +181,7 @@
   </main>
 
   <div class="toast" id="toast" role="status"><span>✓</span><p>설정이 저장됐어요.</p></div>
+  <script src="potion-masks.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -49,6 +49,21 @@ for archive in "${archives[@]}"; do
         exit 1
       }
   fi
+  if [[ "$archive" == *-macOS-universal.zip ]]; then
+    for required in 'Codex Pet HUD.app/Contents/MacOS/CodexPetLimitRings' 'Codex Pet HUD.app/Contents/Resources/settings/index.html'; do
+      grep -Fxq "$required" <<<"$listing" || { echo "Missing $required in $archive" >&2; exit 1; }
+    done
+    for file in app.js app.css potion-masks.js; do
+      required="Codex Pet HUD.app/Contents/Resources/settings/$file"
+      grep -Fxq "$required" <<<"$listing" || { echo "Missing $required in $archive" >&2; exit 1; }
+    done
+    for style in celestial-orb rose-heart amber-star lunar-crescent verdant-leaf; do
+      for suffix in '' '-frame' '-mask'; do
+        required="Codex Pet HUD.app/Contents/Resources/settings/potions/$style$suffix.png"
+        grep -Fxq "$required" <<<"$listing" || { echo "Missing $required in $archive" >&2; exit 1; }
+      done
+    done
+  fi
 done
 
 sha256sum "${archives[@]}" > SHA256SUMS.txt

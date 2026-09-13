@@ -5,6 +5,7 @@
   "type": "object",
   "required": ["scale", "horizontalOffset", "verticalOffset", "potionGap", "usageAlertsEnabled", "alertThresholds", "autoCleanup"],
   "properties": {
+    "potionStyle": { "type": "string", "enum": ["classic", "celestial-orb", "rose-heart", "amber-star", "lunar-crescent", "verdant-leaf"], "default": "classic" },
     "scale": { "type": "number", "minimum": 0.5, "maximum": 1.8, "default": 1 },
     "horizontalOffset": { "type": "number", "minimum": -400, "maximum": 400, "default": 0 },
     "verticalOffset": { "type": "number", "minimum": -300, "maximum": 300, "default": 0 },

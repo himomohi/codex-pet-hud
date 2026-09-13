@@ -19,6 +19,7 @@ private let POTION_FRAME_INSET: CGFloat = 8
 private let DEFAULT_CODEX_PET_SIZE = NSSize(width: 112, height: 121)
 
 private struct OverlaySettings: Codable, Equatable {
+    var potionStyle: String
     var scale: Double
     var horizontalOffset: Double
     var verticalOffset: Double
@@ -44,6 +45,7 @@ private struct OverlaySettings: Codable, Equatable {
     )
 
     private enum CodingKeys: String, CodingKey {
+        case potionStyle
         case scale, horizontalOffset, verticalOffset, potionGap
         case usageAlertsEnabled, nativeNotificationsEnabled, alertThresholds
         case autoCleanup, lastCleanupAt, lastFreedBytes
@@ -59,8 +61,10 @@ private struct OverlaySettings: Codable, Equatable {
         alertThresholds: [Int],
         autoCleanup: Bool,
         lastCleanupAt: TimeInterval?,
-        lastFreedBytes: Int64
+        lastFreedBytes: Int64,
+        potionStyle: String = "classic"
     ) {
+        self.potionStyle = potionStyle
         self.scale = scale
         self.horizontalOffset = horizontalOffset
         self.verticalOffset = verticalOffset
@@ -75,6 +79,7 @@ private struct OverlaySettings: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        potionStyle = PotionStyle.normalized(try container.decodeIfPresent(String.self, forKey: .potionStyle)).rawValue
         scale = try container.decodeIfPresent(Double.self, forKey: .scale) ?? 1
         horizontalOffset = try container.decodeIfPresent(Double.self, forKey: .horizontalOffset) ?? 0
         verticalOffset = try container.decodeIfPresent(Double.self, forKey: .verticalOffset) ?? 0
@@ -89,6 +94,7 @@ private struct OverlaySettings: Codable, Equatable {
 
     func normalized() -> OverlaySettings {
         var value = self
+        value.potionStyle = PotionStyle.normalized(value.potionStyle).rawValue
         value.scale = min(1.8, max(0.5, value.scale))
         value.horizontalOffset = min(400, max(-400, value.horizontalOffset))
         value.verticalOffset = min(300, max(-300, value.verticalOffset))
@@ -288,7 +294,7 @@ private struct OverlayPlacement {
     let renderSettings: OverlaySettings
 }
 
-private enum RingKind: Equatable {
+private enum RingKind: Hashable {
     case outer
     case inner
 }
@@ -537,6 +543,148 @@ private enum LiveUsageFetchResult {
     case failure(String)
 }
 
+// MARK: - Potion Styles
+
+private enum PotionStyle: String, CaseIterable {
+    case classic
+    case celestialOrb = "celestial-orb"
+    case roseHeart = "rose-heart"
+    case amberStar = "amber-star"
+    case lunarCrescent = "lunar-crescent"
+    case verdantLeaf = "verdant-leaf"
+
+    static func normalized(_ value: String?) -> PotionStyle {
+        PotionStyle(rawValue: value?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? "") ?? .classic
+    }
+
+    var name: String {
+        switch self {
+        case .classic: return "기본 포션"
+        case .celestialOrb: return "천청 오브"
+        case .roseHeart: return "장미 하트"
+        case .amberStar: return "호박빛 별"
+        case .lunarCrescent: return "보랏빛 초승달"
+        case .verdantLeaf: return "신록 잎새"
+        }
+    }
+
+    var chamber: (top: CGFloat, bottom: CGFloat) {
+        switch self {
+        case .classic: return (0, 67)
+        case .celestialOrb: return (25, 80)
+        case .roseHeart: return (28, 81)
+        case .amberStar: return (29, 80)
+        case .lunarCrescent: return (28, 83)
+        case .verdantLeaf: return (29, 85)
+        }
+    }
+}
+
+private func potionRemainingText(_ remaining: Double?) -> String {
+    remaining.map { "\(Int(max(0, min($0, 100)).rounded()))%" } ?? "—"
+}
+
+private struct PotionArtworkLayout {
+    let artwork: NSRect
+    let value: NSRect
+    let label: NSRect
+
+    init(in bounds: NSRect) {
+        // 작은 배율에서도 숫자와 창 이름을 병 바깥의 별도 줄에 둔다.
+        let side = max(0, min(bounds.width, bounds.height - 28))
+        artwork = NSRect(x: bounds.midX - side / 2, y: bounds.minY, width: side, height: side)
+        value = NSRect(x: bounds.minX, y: artwork.maxY + 1, width: bounds.width, height: 16)
+        label = NSRect(x: bounds.minX, y: value.maxY, width: bounds.width, height: 11)
+    }
+}
+
+private final class PotionArtwork {
+    let style: PotionStyle
+    let preview: NSImage
+    let frame: CGImage
+    let mask: CGImage
+    private var lastRenders: [RingKind: (remaining: Double?, image: NSImage)] = [:]
+
+    init?(style: PotionStyle, assetDirectory: URL) {
+        guard style != .classic else { return nil }
+        let directory = assetDirectory.appendingPathComponent("potions", isDirectory: true)
+        func bitmap(_ suffix: String) -> NSBitmapImageRep? {
+            guard let data = try? Data(contentsOf: directory.appendingPathComponent(style.rawValue + suffix + ".png")),
+                  let bitmap = NSBitmapImageRep(data: data), bitmap.pixelsWide == 96, bitmap.pixelsHigh == 96 else {
+                return nil
+            }
+            return bitmap
+        }
+        guard let previewBitmap = bitmap(""), let previewImage = previewBitmap.cgImage,
+              let frame = bitmap("-frame")?.cgImage,
+              let mask = bitmap("-mask")?.cgImage else { return nil }
+        self.style = style
+        self.preview = NSImage(cgImage: previewImage, size: NSSize(width: 96, height: 96))
+        self.frame = frame
+        self.mask = mask
+    }
+
+    func renderedImage(remaining: Double?, kind: RingKind) -> NSImage? {
+        if let cached = lastRenders[kind], cached.remaining == remaining { return cached.image }
+        guard let image = makeImage(remaining: remaining, kind: kind) else { return nil }
+        let result = NSImage(cgImage: image, size: NSSize(width: 96, height: 96))
+        lastRenders[kind] = (remaining, result)
+        return result
+    }
+
+    func makeImage(remaining: Double?, kind: RingKind) -> CGImage? {
+        guard let context = CGContext(
+            data: nil, width: 96, height: 96, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: 96, height: 96)
+        context.interpolationQuality = .none
+        context.saveGState()
+        context.clip(to: bounds, mask: mask)
+        context.setFillColor(CGColor(red: 0.055, green: 0.075, blue: 0.11, alpha: 0.80))
+        context.fill(bounds)
+
+        if let remaining {
+            let fraction = CGFloat(max(0, min(remaining, 100)) / 100)
+            let chamber = style.chamber
+            let height = (chamber.bottom - chamber.top) * fraction
+            if height > 0 {
+                // PNG의 위쪽 원점을 Core Graphics의 아래쪽 원점으로 변환한다.
+                let bottom = 96 - chamber.bottom
+                let liquid = CGRect(x: 0, y: bottom, width: 96, height: height)
+                let colors: [CGColor] = kind == .outer ? [
+                    CGColor(red: 0.22, green: 0.015, blue: 0.025, alpha: 1),
+                    CGColor(red: 0.92, green: 0.06, blue: 0.08, alpha: 1)
+                ] : [
+                    CGColor(red: 0.025, green: 0.07, blue: 0.24, alpha: 1),
+                    CGColor(red: 0.05, green: 0.48, blue: 0.92, alpha: 1)
+                ]
+                context.saveGState()
+                context.clip(to: liquid)
+                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors as CFArray, locations: [0, 1]) {
+                    context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: bottom), end: CGPoint(x: 0, y: bottom + height), options: [])
+                }
+                context.restoreGState()
+            }
+        }
+        context.restoreGState()
+        context.draw(frame, in: bounds)
+        return context.makeImage()
+    }
+}
+
+private func makePotionStyleMenu(selectedID: String, target: AnyObject?, action: Selector) -> NSMenu {
+    let menu = NSMenu(title: "포션 디자인")
+    for style in PotionStyle.allCases {
+        let item = NSMenuItem(title: style.name, action: action, keyEquivalent: "")
+        item.target = target
+        item.representedObject = style.rawValue
+        item.state = style == PotionStyle.normalized(selectedID) ? .on : .off
+        menu.addItem(item)
+    }
+    return menu
+}
+
 // MARK: - Potion HUD View
 
 private final class RingsView: NSView {
@@ -562,9 +710,27 @@ private final class RingsView: NSView {
     var overlaySettings = OverlaySettings.defaults {
         didSet {
             if oldValue != overlaySettings {
+                if oldValue.potionStyle != overlaySettings.potionStyle { loadPotionArtwork() }
                 needsDisplay = true
             }
         }
+    }
+
+    var potionAssetDirectory: URL? {
+        didSet {
+            guard oldValue != potionAssetDirectory else { return }
+            loadPotionArtwork()
+            needsDisplay = true
+        }
+    }
+    private var potionArtwork: PotionArtwork?
+
+    private func loadPotionArtwork() {
+        guard let potionAssetDirectory else {
+            potionArtwork = nil
+            return
+        }
+        potionArtwork = PotionArtwork(style: PotionStyle.normalized(overlaySettings.potionStyle), assetDirectory: potionAssetDirectory)
     }
 
     private var particleEmitter = ParticleEmitter()
@@ -683,6 +849,10 @@ private final class RingsView: NSView {
 
     func potion(at point: NSPoint) -> RingKind? {
         for kind in [RingKind.outer, RingKind.inner] {
+            if potionArtwork != nil {
+                if potionBounds(for: kind).contains(point) { return kind }
+                continue
+            }
             let body = potionBodyBounds(for: kind)
             let radiusX = body.width / 2
             let radiusY = body.height / 2
@@ -774,6 +944,20 @@ private final class RingsView: NSView {
             surfaceColor = NSColor(calibratedRed: 0.18, green: 0.88, blue: 1.0, alpha: 1)
             label = "WK"
             pulseScale = 0.65
+        }
+
+        if let potionArtwork,
+           let image = potionArtwork.renderedImage(remaining: remaining, kind: kind) {
+            let layout = PotionArtworkLayout(in: potion)
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current?.imageInterpolation = .none
+            image.draw(in: layout.artwork, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+            NSGraphicsContext.restoreGraphicsState()
+            NSColor.black.withAlphaComponent(0.82).setFill()
+            NSBezierPath(roundedRect: layout.value.union(layout.label), xRadius: 4, yRadius: 4).fill()
+            drawPotionText(potionRemainingText(remaining), size: min(12, max(10, potion.width * 0.16)), weight: .heavy, in: layout.value)
+            drawPotionText(label, size: 8, weight: .heavy, in: layout.label)
+            return
         }
 
         let pulse = pulseAnimation * pulseScale
@@ -877,7 +1061,7 @@ private final class RingsView: NSView {
         )
         NSBezierPath(roundedRect: highlight, xRadius: highlight.width / 2, yRadius: highlight.width / 2).fill()
 
-        let value = remaining.map { "\(Int(max(0, min($0, 100)).rounded()))%" } ?? "—"
+        let value = potionRemainingText(remaining)
         drawPotionText(value, size: 12, weight: .heavy, in: NSRect(x: body.minX, y: body.midY - 9, width: body.width, height: 18))
 
         let pedestal = NSRect(x: body.midX - body.width * 0.34, y: body.maxY - 9, width: body.width * 0.68, height: 13)
@@ -1258,6 +1442,12 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         menu.items.last?.isEnabled = false
         menu.addItem(.separator())
 
+        let potionStyleItem = NSMenuItem(title: "포션 디자인 · \(PotionStyle.normalized(overlaySettings.potionStyle).name)", action: nil, keyEquivalent: "")
+        potionStyleItem.submenu = makePotionStyleMenu(
+            selectedID: overlaySettings.potionStyle, target: self, action: #selector(selectPotionStyle(_:))
+        )
+        menu.addItem(potionStyleItem)
+
         let scaleItem = NSMenuItem(title: "오버레이 크기", action: nil, keyEquivalent: "")
         let scaleMenu = NSMenu(title: "오버레이 크기")
         for percent in [75, 100, 125, 150] {
@@ -1355,6 +1545,13 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         menu.delegate = self
     }
 
+    @objc private func selectPotionStyle(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        var settings = overlaySettings
+        settings.potionStyle = PotionStyle.normalized(id).rawValue
+        applyOverlaySettings(settings)
+    }
+
     @objc private func selectOverlayScale(_ sender: NSMenuItem) {
         guard let percent = sender.representedObject as? Int else { return }
         var settings = overlaySettings
@@ -1445,6 +1642,7 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         saveOverlaySettings()
         scheduleCleanupIfNeeded()
         updateWindow()
+        statusItem?.menu = makeStatusMenu()
         settingsWindowController?.update(settings: overlaySettings, cleanup: cleanupStatus())
         if shouldRequestNotifications {
             requestNativeNotificationPermission()
@@ -1715,6 +1913,7 @@ private final class RingsApp: NSObject, NSApplicationDelegate, NSMenuDelegate, U
         }
         if let ringsView = ringsWindow.contentView as? RingsView {
             ringsView.anchorSize = NSSize(width: anchor.width, height: anchor.height)
+            ringsView.potionAssetDirectory = settingsAssetDirectory()
             ringsView.overlaySettings = placement.renderSettings
 
             ringsView.usage = usage

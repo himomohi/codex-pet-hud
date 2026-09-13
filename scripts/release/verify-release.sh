@@ -65,6 +65,8 @@ grep -Fqx "## $TAG · Codex Pet HUD" "$NOTES"
 grep -Fqx "## What's changed" "$NOTES"
 
 node --check "$ROOT/site/assets/site.js"
+node --check "$ROOT/shared/settings/app.js"
+node "$ROOT/scripts/test-potion-assets.mjs"
 grep -Fq '/releases/latest' "$ROOT/site/assets/site.js"
 if grep -Eq 'v?[0-9]+\.[0-9]+\.[0-9]+' "$ROOT/site/index.html" "$ROOT/site/assets/site.js"; then
   echo "The website must not hardcode a release version" >&2
