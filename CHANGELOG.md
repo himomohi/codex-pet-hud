@@ -23,6 +23,10 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 - 포션 선택·저장·채움·배율 테스트와 macOS 압축 파일의 이미지 포함 여부를 릴리즈 필수 검사에 추가한다.
 - 릴리즈 워크플로를 수동 실행하면 태그 생성과 공개 없이 세 플랫폼 빌드·압축 검사를 먼저 수행할 수 있다.
 
+### Fixed
+
+- 로컬 macOS 설정 화면의 액체 마스크 누락과 좁은 창의 미리보기 잘림을 수정한다.
+
 ## [0.1.10] - 2026-08-29
 
 ### Added

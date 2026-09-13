@@ -63,12 +63,31 @@ function readControls() {
   state.autoCleanup = controls.autoCleanup.checked;
 }
 
+function fitPreview() {
+  const stage = $("previewStage");
+  const hud = $("hudPreview");
+  if (!stage.clientWidth || !stage.clientHeight || !hud.offsetWidth || !hud.offsetHeight) return;
+
+  const padding = 24;
+  const hint = stage.querySelector(".preview-hint");
+  const bottom = Math.max(padding + 1, Math.min(stage.clientHeight - padding, hint.offsetTop - 16));
+  const availableWidth = Math.max(1, stage.clientWidth - padding * 2);
+  const availableHeight = bottom - padding;
+  // 저장된 크기와 위치는 유지하고 미리보기에서만 전체 HUD가 보이도록 맞춥니다.
+  const previewScale = Math.min(state.scale, availableWidth / hud.offsetWidth, availableHeight / hud.offsetHeight);
+  const halfWidth = hud.offsetWidth * previewScale / 2;
+  const halfHeight = hud.offsetHeight * previewScale / 2;
+  const centerX = stage.clientWidth * .5 + state.horizontalOffset * .35;
+  const centerY = stage.clientHeight * .48 - state.verticalOffset * .35;
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+  hud.style.setProperty("--scale", previewScale);
+  hud.style.left = `${clamp(centerX, padding + halfWidth, stage.clientWidth - padding - halfWidth)}px`;
+  hud.style.top = `${clamp(centerY, padding + halfHeight, bottom - halfHeight)}px`;
+}
+
 function renderPreview() {
   const hud = $("hudPreview");
-  hud.style.setProperty("--scale", state.scale);
   hud.style.setProperty("--gap", `${state.potionGap}px`);
-  hud.style.left = `calc(50% + ${state.horizontalOffset * .35}px)`;
-  hud.style.top = `calc(48% - ${state.verticalOffset * .35}px)`;
 
   const style = potionStyles[state.potionStyle];
   $("selectedPotionStyle").textContent = `현재 선택: ${style.name}`;
@@ -93,6 +112,7 @@ function renderPreview() {
   $("potionGapValue").textContent = `${Math.round(state.potionGap)}px`;
   $("thresholdOptions").classList.toggle("disabled", !state.usageAlertsEnabled);
   document.querySelectorAll('input[type="range"]').forEach(rangeFill);
+  fitPreview();
 }
 
 function scheduleSave() {
@@ -203,4 +223,8 @@ $("doneButton").addEventListener("click", () => {
   post({ type: "close" });
 });
 window.applyNativeState({ settings: state });
+const previewResizeObserver = new ResizeObserver(fitPreview);
+previewResizeObserver.observe($("previewStage"));
+previewResizeObserver.observe($("hudPreview"));
+previewResizeObserver.observe($("previewStage").querySelector(".preview-hint"));
 post({ type: "ready" });

@@ -399,6 +399,15 @@ private func testSettingsWebView() {
     }
 
     func snapshot(_ name: String) {
+        waitForWebKit("potion preview fitting inside its stage") { evaluate("""
+            (() => {
+              const stage = document.getElementById('previewStage').getBoundingClientRect();
+              const hud = document.getElementById('hudPreview').getBoundingClientRect();
+              return hud.left >= stage.left && hud.right <= stage.right &&
+                hud.top >= stage.top && hud.bottom <= stage.bottom;
+            })()
+            """) as? Bool == true
+        }
         let snapshotConfiguration = WKSnapshotConfiguration()
         snapshotConfiguration.rect = webView.bounds
         snapshotConfiguration.afterScreenUpdates = true
