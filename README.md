@@ -34,6 +34,7 @@ The pet stays centered and clickable. The red potion shows the five-hour window;
 - Live remaining usage, reset countdown, and 20/10/5% threshold alerts
 - Scale, spacing, centered placement, offsets, and notification settings
 - macOS menu-bar controls and Windows system-tray controls
+- Windows Settings opens with Classic and five illustrated potion choices; selection updates both HUD bottles immediately and persists after restart.
 - Pet-hidden mode pauses HUD rendering and usage refreshes
 - Daily cleanup limited to this app's own cache — Codex history and auth stay untouched
 

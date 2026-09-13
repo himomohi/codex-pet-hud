@@ -26,6 +26,20 @@ The platform applications do not share UI source code. This keeps AppKit/launchd
 | App data | `~/Library/Application Support/CodexPetLimitRings` | `%LOCALAPPDATA%\CodexPetLimitRings` |
 | Cleanup | app-owned HTTP/cache/temp/log data only | app-owned Cache/Temp/Logs only |
 
+## Windows 포션 선택 연결
+
+`Views/SettingsWindow`의 첫 화면은 기본 모양과 새 포션 5종을 표시한다.
+`SettingsChanged` → `MainController.ApplySettings` → `SettingsStore.SaveSettings`와
+두 `PotionWindow.ApplyStyle` 호출로 선택과 HUD 표시를 연결한다.
+`OverlaySettings.PotionStyle`은 `potionStyle` 키로 저장하고 기본값은 `classic`이다.
+이전 설정과 알 수 없는 JSON 키는 보존하며, 모양 선택 시 배치·알림 값을 덮어쓰지 않는다.
+
+`PotionStyles`는 15개 WPF 내장 PNG(미리보기·프레임·마스크)를 공유한다.
+`PotionWindow.UpdateUsage`는 각 병의 마스크에 0~100% 액체를 채우고,
+기존 92×110 기준 크기와 입력·드래그 계약을 유지한다.
+`tests/PotionTests`는 6종 직렬화, 내장 이미지, 미확인·0·50·100%, 세 가지 배율,
+480/520px 첫 화면 노출을 검사한다. 실제 클릭·키보드 선택·저장은 설치본에서 별도로 확인한다.
+
 ## Trigger invariant
 
 Both native apps must show the HUD only when:

@@ -12,4 +12,7 @@
     <RootNamespace>CodexPetLimitRings.Windows</RootNamespace>
     <ApplicationIcon>..\..\..\assets\windows\tray-icon-emoji.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="Assets\Potions\*.png" />
+  </ItemGroup>
 </Project>

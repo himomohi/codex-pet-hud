@@ -36,7 +36,7 @@
       </ControlTemplate>
     </Button.Template>
     <Grid>
-      <Viewbox Stretch="Uniform">
+      <Viewbox x:Name="ClassicArtwork" Stretch="Uniform">
         <Canvas Width="92" Height="110">
         <Ellipse Canvas.Left="7" Canvas.Top="19" Width="78" Height="78" Fill="#211F1C">
           <Ellipse.Effect>
@@ -85,6 +85,21 @@
 
         <Border Canvas.Left="19.5" Canvas.Top="88" Width="53" Height="13" CornerRadius="3"
                 Background="{StaticResource MetalBrush}" BorderBrush="{StaticResource MetalEdgeBrush}" BorderThickness="1.2" />
+        </Canvas>
+      </Viewbox>
+
+      <Viewbox x:Name="StyledArtwork" Stretch="Uniform" Visibility="Collapsed" IsHitTestVisible="False">
+        <Canvas Width="92" Height="110">
+          <Viewbox x:Name="SpriteArtwork" Canvas.Left="10" Canvas.Top="0" Width="72" Height="72" Stretch="Fill">
+            <Grid Width="96" Height="96" RenderOptions.BitmapScalingMode="NearestNeighbor">
+              <Canvas x:Name="StyledChamber" Width="96" Height="96" ClipToBounds="True">
+                <Rectangle Width="96" Height="96" Fill="#DD101018" />
+                <Rectangle x:Name="StyledLiquid" Width="96" Height="0" />
+                <Rectangle x:Name="StyledSurface" Width="96" Height="2" Visibility="Hidden" />
+              </Canvas>
+              <Image x:Name="StyledFrame" Width="96" Height="96" Stretch="Fill" />
+            </Grid>
+          </Viewbox>
         </Canvas>
       </Viewbox>
 

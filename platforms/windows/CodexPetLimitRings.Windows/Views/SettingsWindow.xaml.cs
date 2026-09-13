@@ -11,12 +11,18 @@ public partial class SettingsWindow : Window
     public event Action<OverlaySettings>? SettingsChanged;
     public event Action? CleanupRequested;
 
-    public SettingsWindow() => InitializeComponent();
+    public SettingsWindow()
+    {
+        InitializeComponent();
+        PotionStyleChoices.ItemsSource = PotionStyles.All;
+    }
 
     public void Apply(OverlaySettings settings)
     {
         _applying = true;
         _settings = settings;
+        PotionStyleChoices.SelectedItem = PotionStyles.Get(settings.PotionStyle);
+        UpdatePotionStyleLabel();
         Scale.Value = settings.Scale;
         HorizontalOffset.Value = settings.HorizontalOffset;
         VerticalOffset.Value = settings.VerticalOffset;
@@ -35,6 +41,17 @@ public partial class SettingsWindow : Window
             ? "아직 정리 기록이 없어요."
             : $"마지막 확보 {FormatBytes(settings.LastFreedBytes)}";
         _applying = false;
+    }
+
+    private void UpdatePotionStyleLabel() =>
+        SelectedPotionStyle.Text = $"현재 선택: {PotionStyles.Get(_settings.PotionStyle).Name}";
+
+    private void PotionStyle_OnChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_applying || !IsLoaded || PotionStyleChoices.SelectedItem is not PotionStyleDefinition style) return;
+        _settings.PotionStyle = style.Id;
+        UpdatePotionStyleLabel();
+        SettingsChanged?.Invoke(_settings);
     }
 
     private void Control_OnChanged(object sender, RoutedEventArgs e)

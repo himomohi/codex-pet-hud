@@ -66,6 +66,8 @@ public sealed class MainController : IDisposable
         _settingsWindow.SettingsChanged += ApplySettings;
         _settingsWindow.CleanupRequested += RunCleanup;
         _settingsWindow.Apply(_settings);
+        _primaryPotion.ApplyStyle(_settings.PotionStyle);
+        _secondaryPotion.ApplyStyle(_settings.PotionStyle);
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
         Tick();
@@ -378,6 +380,8 @@ public sealed class MainController : IDisposable
         settings.Normalize();
         _settings = settings;
         _store.SaveSettings(_settings);
+        _primaryPotion.ApplyStyle(_settings.PotionStyle);
+        _secondaryPotion.ApplyStyle(_settings.PotionStyle);
         if (_anchor is not null) PlacePotions(_anchor);
     }
 

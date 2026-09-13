@@ -4,6 +4,12 @@ All notable changes to Codex Pet HUD are documented here. This project follows [
 
 ## [Unreleased]
 
+### Added
+
+- Windows 네이티브 설정 창 첫 화면에 기본 포션과 새 포션 5종 선택 카드를 추가했다.
+- 선택한 모양을 두 HUD의 프레임·액체 마스크에 즉시 적용하고 재시작 후에도 보존한다.
+- 설정 선택 카드의 키보드 조작, 기존 설정 보존, 내장 이미지·채움·배율·좁은 창 검증을 추가했다.
+
 ### Planned
 
 - Developer ID signing and notarization for macOS

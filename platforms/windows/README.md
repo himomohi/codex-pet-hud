@@ -20,6 +20,18 @@ The installer publishes a self-contained executable, copies it to `%LOCALAPPDATA
 
 Runtime diagnostics are written to `%LOCALAPPDATA%\CodexPetLimitRings\Logs\runtime.log` without tokens or response bodies.
 
+## Potion selection
+
+Open **세부 설정…** from the system tray. The top of the native settings window
+offers Classic and five illustrated potion shapes. Selection applies to both
+HUD bottles immediately and persists in `potionStyle`; layout and alert options stay unchanged.
+
+Run the focused resource, settings, fill, scaling, and first-screen layout checks with:
+
+```powershell
+dotnet run --project platforms/windows/tests/PotionTests/PotionTests.csproj -c Release
+```
+
 Uninstall while preserving settings:
 
 ```powershell

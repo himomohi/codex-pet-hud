@@ -1,9 +1,11 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CodexPetLimitRings.Windows;
 
 public sealed class OverlaySettings
 {
+    public string PotionStyle { get; set; } = "classic";
     public double Scale { get; set; } = 1;
     public double HorizontalOffset { get; set; }
     public double VerticalOffset { get; set; }
@@ -16,8 +18,12 @@ public sealed class OverlaySettings
     public long? LastCleanupAt { get; set; }
     public long LastFreedBytes { get; set; }
 
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? AdditionalSettings { get; set; }
+
     public void Normalize()
     {
+        PotionStyle = PotionStyleIds.Normalize(PotionStyle);
         if (!double.IsFinite(Scale)) Scale = 1;
         if (!double.IsFinite(HorizontalOffset)) HorizontalOffset = 0;
         if (!double.IsFinite(VerticalOffset)) VerticalOffset = 0;
@@ -42,6 +48,19 @@ public sealed class OverlaySettings
         }
         LastFreedBytes = Math.Max(0, LastFreedBytes);
     }
+}
+
+public static class PotionStyleIds
+{
+    public static string Normalize(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        "celestial-orb" => "celestial-orb",
+        "rose-heart" => "rose-heart",
+        "amber-star" => "amber-star",
+        "lunar-crescent" => "lunar-crescent",
+        "verdant-leaf" => "verdant-leaf",
+        _ => "classic"
+    };
 }
 
 public sealed record PetAnchor(
